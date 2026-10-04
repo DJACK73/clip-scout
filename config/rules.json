@@ -1,0 +1,325 @@
+{
+  "categories": {
+    "foot": {
+      "actions": [
+        "freekicks",
+        "penalties",
+        "celebrations",
+        "long_shots",
+        "dribbles_skills",
+        "assists",
+        "general_comps",
+        "tiki_taka",
+        "bicycle_kicks",
+        "saves",
+        "tackles",
+        "headers",
+        "counter_attacks",
+        "hattricks",
+        "one_vs_one"
+      ],
+      "forced_keywords": [
+        "60fps",
+        "clean feed",
+        "logless",
+        "no commentary",
+        "open matte",
+        "player cam"
+      ],
+      "action_aliases": {
+        "freekicks": [
+          "free kick",
+          "free kicks",
+          "free-kick",
+          "freekick"
+        ],
+        "penalties": [
+          "penalty",
+          "penalties",
+          "penalty kick"
+        ],
+        "celebrations": [
+          "celebration",
+          "celebrates"
+        ],
+        "long_shots": [
+          "long shot",
+          "long range",
+          "long-range",
+          "screamer"
+        ],
+        "dribbles_skills": [
+          "dribble",
+          "dribbling",
+          "skills"
+        ],
+        "assists": [
+          "assist",
+          "assists"
+        ],
+        "general_comps": [
+          "best moments",
+          "compilation",
+          "all goals"
+        ],
+        "tiki_taka": [
+          "tiki taka"
+        ],
+        "bicycle_kicks": [
+          "bicycle kick"
+        ],
+        "saves": [
+          "save",
+          "saves",
+          "goalkeeper",
+          "keeper"
+        ],
+        "tackles": [
+          "tackle",
+          "tackles",
+          "defending",
+          "defensive"
+        ],
+        "headers": [
+          "header",
+          "headers",
+          "headed"
+        ],
+        "counter_attacks": [
+          "counter attack",
+          "counter-attack",
+          "counterattack"
+        ],
+        "hattricks": [
+          "hat-trick",
+          "hat trick",
+          "hattrick"
+        ],
+        "one_vs_one": [
+          "1v1",
+          "one on one",
+          "one vs one"
+        ]
+      },
+      "min_fps": 50,
+      "min_kbps": 4000,
+      "max_duration_sec": 500,
+      "action_min_fps": {
+        "tiki_taka": 30
+      },
+      "action_min_kbps": {
+        "tiki_taka": 2000
+      }
+    },
+    "anime": {
+      "actions": [
+        "fights_aura",
+        "badass_walks",
+        "rage_screams",
+        "sad_backstory",
+        "funny_chill",
+        "general_scenepacks",
+        "transformations",
+        "villain_moments",
+        "plot_twists",
+        "training_arcs",
+        "emotional_reunions",
+        "romance_moments"
+      ],
+      "forced_keywords": [
+        "scenepack",
+        "logless",
+        "bluray raw",
+        "no sub"
+      ],
+      "min_fps": 24,
+      "min_kbps": 2000,
+      "max_duration_sec": 500,
+      "action_aliases": {
+        "fights_aura": [
+          "fight scene",
+          "fight",
+          "fights",
+          "battle",
+          " vs ",
+          "clash"
+        ],
+        "badass_walks": [
+          "badass walk",
+          "badass walks",
+          "walking scene",
+          "badass moment"
+        ],
+        "rage_screams": [
+          "rage scene",
+          "rage",
+          "scream",
+          "screams",
+          "angry"
+        ],
+        "sad_backstory": [
+          "sad backstory",
+          "sad scene",
+          "backstory",
+          "sad moments"
+        ],
+        "funny_chill": [
+          "funny moments",
+          "funny",
+          "chill",
+          "comedy"
+        ],
+        "general_scenepacks": [
+          "scene pack",
+          "scenepack",
+          "scenepacks"
+        ],
+        "transformations": [
+          "transformation",
+          "power up",
+          "power-up",
+          "awakening"
+        ],
+        "villain_moments": [
+          "villain",
+          "villains",
+          "antagonist"
+        ],
+        "plot_twists": [
+          "plot twist",
+          "twist",
+          "betrayal"
+        ],
+        "training_arcs": [
+          "training",
+          "training arc"
+        ],
+        "emotional_reunions": [
+          "reunion",
+          "reunions",
+          "emotional"
+        ],
+        "romance_moments": [
+          "romance",
+          "romantic",
+          "confession"
+        ]
+      }
+    },
+    "audio": {
+      "actions": [
+        "trending_music",
+        "voicelines",
+        "sfx",
+        "phonk",
+        "ambience",
+        "transitions",
+        "meme_sounds",
+        "cinematic_hits"
+      ],
+      "forced_keywords": [
+        "mp3 320kbps",
+        "clean audio"
+      ],
+      "min_fps": 24,
+      "action_forced_keywords": {"trending_music": [], "voicelines": [], "sfx": [], "phonk": [], "ambience": [], "transitions": [], "meme_sounds": [], "cinematic_hits": []},
+      "min_kbps": 1000,
+      "min_height": 0,
+      "min_duration_sec": 1,
+      "max_duration_sec": 600,
+      "action_aliases": {
+        "trending_music": [
+          "trending music",
+          "trending",
+          "music",
+          "song",
+          "phonk"
+        ],
+        "voicelines": [
+          "voice line",
+          "voicelines",
+          "voiceline",
+          "quotes"
+        ],
+        "sfx": [
+          "sfx",
+          "sound effect",
+          "sound effects"
+        ],
+        "phonk": [
+          "phonk",
+          "drift phonk",
+          "brazilian phonk"
+        ],
+        "ambience": [
+          "ambience",
+          "ambient",
+          "atmosphere"
+        ],
+        "transitions": [
+          "transition",
+          "transitions",
+          "whoosh"
+        ],
+        "meme_sounds": [
+          "meme sound",
+          "meme sounds",
+          "meme"
+        ],
+        "cinematic_hits": [
+          "cinematic hit",
+          "cinematic hits",
+          "impact",
+          "boom"
+        ]
+      }
+    }
+  },
+  "excluded_keywords": [
+    "BeIN Sports",
+    "Canal+",
+    "enhanced",
+    "remaster",
+    "remastered",
+    "topaz",
+    "upscale",
+    "upscaled",
+    "pes",
+    "efootball",
+    "ea fc",
+    "fc 24",
+    "fc 25",
+    "fc 26",
+    "gameplay",
+    "playstation",
+    "ps5"
+  ],
+  "kind_keywords": {
+    "pack": [
+      "clips for edit",
+      "clips for edits",
+      "for edit",
+      "for edits",
+      "for editing",
+      "scenepack",
+      "scene pack",
+      "clip pack",
+      "clips pack",
+      "free clips"
+    ],
+    "edit": [
+      "AMV",
+      "edit",
+      "edits",
+      "CapCut"
+    ]
+  },
+  "excluded_patterns": [
+    "\\bpes\\s?\\d{2,4}\\b",
+    "\\bfifa\\s?\\d+",
+    "\\bfc\\s?2\\d\\b",
+    "\\befootball\\b",
+    "\\bea\\s?sports\\s?fc\\b",
+    "\\bfifa\\b(?!\\s*(?:world|women|club|arab|confed|the\\s+best|u-?\\d))"
+  ]
+}

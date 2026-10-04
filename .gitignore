@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+*.pyc
+config/.env
+config/cookies.txt
+database/*.db
+database/*.db-*
+storage/
+quarantine/
+logs/
+*.bak
+*.bak[0-9]*
+*.tgz
