@@ -21,6 +21,7 @@ def _counts() -> dict[str, int]:
     rows = get_connection().execute("select status, count(*) as n from downloads group by status").fetchall()
     return {r["status"]: r["n"] for r in rows}
 
+st.markdown("<style>[data-testid='stAppDeployButton']{display:none}</style>", unsafe_allow_html=True)
 st.title("🎬 clip-scout")
 st.caption("Sourcing de rushs bruts · yt-dlp + FFprobe")
 _c = _counts()
@@ -123,8 +124,7 @@ def render_job() -> None:
     if running:
         st.info(f"En cours : {job['video_id']} — statut : {status}")
         pct = _progress(job["log"])
-        if pct is not None:
-            st.progress(pct / 100, text=f"{pct:.0f} %")
+        st.progress((pct or 0) / 100, text=f"{pct:.0f} %" if pct is not None else "Téléchargement en cours…")
         if st.button("Annuler", key="cancel_job"):
             cancel()
             st.rerun()
@@ -180,7 +180,8 @@ with tab_search:
     s_kind = c4.selectbox("Type", KINDS, key="s_kind")
     limit = c5.number_input("Limite", 1, 20, 5)
     if st.button("Chercher", type="primary") and subject and action:
-        items, stats = find_candidates_ex(s_cat, subject, action, int(limit), s_kind)
+        with st.spinner("Recherche en cours…"):
+            items, stats = find_candidates_ex(s_cat, subject, action, int(limit), s_kind)
         st.session_state["search"] = {"ctx": (s_cat, subject, action, s_kind), "items": items, "stats": dict(stats)}
     state = st.session_state.get("search", {"ctx": (s_cat, subject, action, s_kind), "items": [], "stats": {}})
     statuses = {r["video_id"]: r["status"] for r in get_connection().execute("select video_id, status from downloads")}

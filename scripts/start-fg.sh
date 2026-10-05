@@ -2,4 +2,5 @@
 cd "$(dirname "$0")/.." || exit 1
 pgrep -f "streamlit run app/[d]ashboard.py" >/dev/null && exit 0
 mkdir -p logs
+PYTHONPATH=. venv/bin/python -m scripts.auto_cleanup >> logs/cleanup.log 2>&1
 exec scripts/start.sh >logs/streamlit.log 2>&1

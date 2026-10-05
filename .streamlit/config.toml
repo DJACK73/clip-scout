@@ -1,12 +1,16 @@
 [theme]
-base = "dark"
 primaryColor = "#7c5cff"
+baseRadius = "large"
+font = "sans serif"
+
+[theme.light]
+backgroundColor = "#f6f7fb"
+secondaryBackgroundColor = "#e9ebf4"
+textColor = "#14172a"
+borderColor = "#d5d9e8"
+
+[theme.dark]
 backgroundColor = "#0b0d14"
 secondaryBackgroundColor = "#161a26"
 textColor = "#e8eaf2"
-font = "sans serif"
-baseRadius = "large"
 borderColor = "#262b3d"
-
-[client]
-toolbarMode = "minimal"
