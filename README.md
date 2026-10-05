@@ -7,6 +7,7 @@ Sourcing et validation de rushs vidéo bruts (yt-dlp + FFprobe), sans montage.
 - `clip-scout-stop.bat` : arrêt propre, refusé si un téléchargement est en cours
 
 ## Installation
+    sudo apt install -y ffmpeg
     python3 -m venv venv
     source venv/bin/activate
     pip install -r requirements.txt
