@@ -7,21 +7,22 @@ RULES_PATH = Path(__file__).resolve().parent.parent / "config" / "rules.json"
 def load_rules() -> dict:
     return json.loads(RULES_PATH.read_text(encoding="utf-8"))
 
-def validate(category: str, action: str) -> None:
+def validate(category: str, action: str, free: bool = False) -> None:
     categories = load_rules()["categories"]
     if category not in categories:
         raise ValueError(f"Catégorie inconnue: {category}")
-    if action not in categories[category]["actions"]:
+    if not free and action not in categories[category]["actions"]:
         raise ValueError(f"Action inconnue pour {category}: {action}")
 
-def build_query(category: str, subject: str, action: str, sample_size: int = 3) -> str:
-    validate(category, action)
+def build_query(category: str, subject: str, action: str, sample_size: int = 3, precision: str = "", free: bool = False) -> str:
+    validate(category, action, free)
     rules = load_rules()["categories"][category]
-    forced = rules.get("action_forced_keywords", {}).get(action, rules["forced_keywords"])
+    forced = [] if free else rules.get("action_forced_keywords", {}).get(action, rules["forced_keywords"])
     picked = forced[:sample_size]
-    aliases = rules.get("action_aliases", {}).get(action)
+    aliases = None if free else rules.get("action_aliases", {}).get(action)
     term = aliases[0] if aliases else action.replace('_', ' ')
-    head = subject if term.lower() == subject.lower() else f"{subject} {term}"
+    base = f"{subject} {precision.strip()}".strip()
+    head = base if term.lower() == subject.lower() else f"{base} {term}"
     return f"{head} {' '.join(picked)}".strip()
 
 def excluded_terms() -> list[str]:

@@ -8,12 +8,14 @@ from app.get import video_id
 from app.profiler import load_rules
 from app.scout_router import find_candidates_ex
 from app.settings import settings
+from app.slug import slug
 
 CATEGORIES: list[str] = ["foot", "anime", "audio"]
 CAT_LABELS: dict[str, str] = {"foot": "⚽ foot", "anime": "🎌 anime", "audio": "🎵 audio"}
 KINDS: list[str] = ["raw", "pack", "edit"]
 BASE_COLUMNS: list[str] = ["video_id", "status", "reason", "title", "category", "kind", "subject", "action", "fps", "bitrate", "channel", "file_path", "created_at"]
 ACTIONS: dict[str, list[str]] = {k: v["actions"] for k, v in load_rules()["categories"].items()}
+OTHER_ACTION: str = "✏️ Autre…"
 
 init_db()
 st.set_page_config(page_title="clip-scout", layout="wide")
@@ -25,10 +27,11 @@ st.markdown("<style>[data-testid='stAppDeployButton']{display:none}</style>", un
 st.title("🎬 clip-scout")
 st.caption("Sourcing de rushs bruts · yt-dlp + FFprobe")
 _c = _counts()
-m1, m2, m3 = st.columns(3)
+m1, m2, m3, m4 = st.columns(4)
 m1.metric("Téléchargés", _c.get("ok", 0))
 m2.metric("Rejetés", _c.get("rejected_inspect", 0) + _c.get("rejected_quality", 0))
 m3.metric("Échecs", _c.get("failed", 0))
+m4.metric("Supprimés", _c.get("purged", 0))
 
 def _open_folder() -> None:
     win = subprocess.run(["wslpath", "-w", str(settings.base_storage_path)], capture_output=True, text=True).stdout.strip()
@@ -36,7 +39,7 @@ def _open_folder() -> None:
 
 st.button("📂 Ouvrir le dossier des téléchargements", on_click=_open_folder)
 panel = st.container()
-tab_url, tab_search, tab_db = st.tabs(["🔗 URL directe", "🔍 Recherche", "🗄️ Base"])
+tab_search, tab_url, tab_db = st.tabs(["🔍 Recherche", "🔗 URL directe", "🗄️ Base"])
 
 ROOT = Path(__file__).resolve().parents[1]
 LOGS = ROOT / "logs"
@@ -152,6 +155,33 @@ def _progress(log: str) -> float | None:
     hits = re.findall(r"(\d{1,3}(?:\.\d+)?)%", tail)
     return min(float(hits[-1]), 100.0) if hits else None
 
+def _category_files(cat: str) -> list[tuple[str, Path]]:
+    root = Path(settings.base_storage_path).resolve()
+    rows = get_connection().execute("select video_id, file_path from downloads where category = ? and status = 'ok' and file_path is not null", (cat,)).fetchall()
+    out: list[tuple[str, Path]] = []
+    for r in rows:
+        p = Path(r["file_path"])
+        if p.is_file() and root in p.resolve().parents:
+            out.append((r["video_id"], p))
+    return out
+
+def _purge_category(cat: str) -> tuple[int, int]:
+    from app.database import update_status
+    files = _category_files(cat)
+    size = 0
+    for vid, p in files:
+        size += p.stat().st_size
+        p.unlink(missing_ok=True)
+        update_status(vid, "purged")
+    base = Path(settings.base_storage_path) / cat
+    dirs = sorted((d for d in base.rglob("*") if d.is_dir()), key=lambda d: len(d.parts), reverse=True)
+    for d in dirs:
+        try:
+            d.rmdir()
+        except OSError:
+            pass
+    return len(files), size // 1_000_000
+
 _STATUS_COLORS: dict[str, str] = {"ok": "green", "failed": "red", "rejected_inspect": "orange", "rejected_quality": "orange", "excluded_game": "gray", "pending": "blue"}
 
 def _fmt_dur(d: float | None) -> str:
@@ -173,16 +203,23 @@ with tab_url:
             st.error(str(exc))
 
 with tab_search:
-    c1, c2, c3, c4, c5 = st.columns(5)
+    c1, c2, c3 = st.columns([2, 4, 4])
     s_cat = c1.selectbox("Catégorie", CATEGORIES, key="s_cat", format_func=CAT_LABELS.get)
-    subject = c2.text_input("Sujet")
-    action = c3.selectbox("Action", ACTIONS[s_cat], key="s_action")
-    s_kind = c4.selectbox("Type", KINDS, key="s_kind")
-    limit = c5.number_input("Limite", 1, 20, 5)
-    if st.button("Chercher", type="primary") and subject and action:
+    subject = c2.text_input("Sujet", placeholder="black clover")
+    precision = c3.text_input("Précision (optionnel)", placeholder="asta vs noelle")
+    d1, d2, d3, d4 = st.columns([3, 3, 2, 2])
+    choice = d1.selectbox("Action", ACTIONS[s_cat] + [OTHER_ACTION], key="s_action")
+    free = choice == OTHER_ACTION
+    custom = d2.text_input("Action libre", key="s_custom", placeholder="duel final", disabled=not free)
+    s_kind = d3.selectbox("Type", KINDS, key="s_kind")
+    limit = d4.number_input("Limite", 1, 20, 5)
+    subj = subject.strip()
+    action = custom.strip() if free else choice
+    store_action = slug(action) if free else action
+    if st.button("Chercher", type="primary", disabled=not (subj and action)):
         with st.spinner("Recherche en cours…"):
-            items, stats = find_candidates_ex(s_cat, subject, action, int(limit), s_kind)
-        st.session_state["search"] = {"ctx": (s_cat, subject, action, s_kind), "items": items, "stats": dict(stats)}
+            items, stats = find_candidates_ex(s_cat, subj, action, int(limit), s_kind, precision.strip(), free)
+        st.session_state["search"] = {"ctx": (s_cat, subj, store_action, s_kind), "items": items, "stats": dict(stats)}
     state = st.session_state.get("search", {"ctx": (s_cat, subject, action, s_kind), "items": [], "stats": {}})
     statuses = {r["video_id"]: r["status"] for r in get_connection().execute("select video_id, status from downloads")}
     ctx = state["ctx"]
@@ -200,7 +237,7 @@ with tab_search:
             img, body, act = st.columns([2, 6, 2], vertical_alignment="center")
             img.image(f"https://i.ytimg.com/vi/{vid}/mqdefault.jpg", width=170)
             body.markdown(f"**{cand['title']}**")
-            body.caption(f"{_fmt_dur(cand.get('duration'))} · {cand.get('channel')} · `{vid}`")
+            body.caption(f"{_fmt_dur(cand.get('duration'))} · {cand.get('channel')} · score {cand.get('score', '?')} · `{vid}`")
             if status:
                 body.markdown(f":{_STATUS_COLORS.get(status, 'gray')}-badge[{status}]")
             act.link_button("Ouvrir", f"https://www.youtube.com/watch?v={vid}", width="stretch")
@@ -216,6 +253,32 @@ with tab_db:
     view = [{**r, "lien": f"https://www.youtube.com/watch?v={r['video_id']}"} for r in rows if r["status"] in (pick or labels) and q in (r.get("title") or "").lower()]
     st.dataframe(view, width="stretch", hide_index=True, column_config={"lien": st.column_config.LinkColumn("Lien", display_text="Ouvrir")})
     st.caption(f"{len(view)} / {len(rows)} lignes")
+    st.divider()
+    st.subheader("🧹 Nettoyage manuel")
+    st.caption("Supprime les vidéos téléchargées (statut ok) d'une catégorie ; la ligne reste en base avec le statut purged.")
+    msg = st.session_state.pop("purge_msg", None)
+    if msg:
+        st.success(msg)
+    for col, pcat in zip(st.columns(3), CATEGORIES):
+        pfiles = _category_files(pcat)
+        pmb = sum(p.stat().st_size for _, p in pfiles) // 1_000_000
+        col.metric(CAT_LABELS[pcat], f"{len(pfiles)} fichiers")
+        col.caption(f"{pmb} Mo")
+        if col.button(f"🗑️ Supprimer {pcat}", key=f"purge_{pcat}", disabled=not pfiles, width="stretch"):
+            st.session_state["purge_ask"] = pcat
+    ask = st.session_state.get("purge_ask")
+    if ask:
+        afiles = _category_files(ask)
+        st.warning(f"Supprimer définitivement {len(afiles)} vidéo(s) de {ask} ?")
+        yes, no = st.columns(2)
+        if yes.button("Confirmer la suppression", key="purge_yes", type="primary", width="stretch"):
+            n, mb = _purge_category(ask)
+            st.session_state.pop("purge_ask", None)
+            st.session_state["purge_msg"] = f"{n} vidéo(s) supprimée(s) ({mb} Mo) — {ask}"
+            st.rerun()
+        if no.button("Annuler", key="purge_no", width="stretch"):
+            st.session_state.pop("purge_ask", None)
+            st.rerun()
 
 with panel:
     st.fragment(render_job, run_every=5 if busy() else None)()

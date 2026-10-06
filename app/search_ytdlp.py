@@ -4,7 +4,7 @@ from app.guard import build_ydl_opts, network_delay
 from app.profiler import build_query, exclusion_reason, classify
 from app.database import is_duplicate
 from app.logger import log
-from app.ranker import relevant
+from app.ranker import relevant, precision_score
 
 KEYWORD_LEVELS: tuple[int, ...] = (1, 0)
 KIND_TERMS: dict[str, str] = {"raw": "", "pack": "clips for edits", "edit": "edit"}
@@ -54,14 +54,16 @@ def _triage(raw: list[dict], category: str, subject: str, action: str, kind: str
         kept.append(_candidate(entry))
     return kept, stats
 
-def search_ex(category: str, subject: str, action: str, limit: int = 10, kind: str = "raw", cap: int | None = None) -> tuple[list[dict], Counter]:
+def search_ex(category: str, subject: str, action: str, limit: int = 10, kind: str = "raw", cap: int | None = None, precision: str = "", free: bool = False) -> tuple[list[dict], Counter]:
     total: Counter = Counter()
-    for i, level in enumerate(KEYWORD_LEVELS if kind == "raw" else (0,)):
+    for i, level in enumerate(KEYWORD_LEVELS if kind == "raw" and not free else (0,)):
         if i:
             network_delay()
-        query = build_query(category, subject, action, level) if kind == "raw" else f"{subject} {KIND_TERMS[kind]}"
+        query = build_query(category, subject, action, level, precision, free) if kind == "raw" else " ".join(p for p in (subject, precision.strip(), KIND_TERMS[kind]) if p)
         raw = _fetch(query, limit * 3)
         kept, stats = _triage(raw, category, subject, action, kind)
+        if precision.strip():
+            kept.sort(key=lambda c: -precision_score(c["title"], precision))
         total.update(stats)
         kept = kept[:cap or limit]
         log(f"Search '{query}': {len(raw)} bruts, {len(kept)} retenus, {dict(stats)}")
