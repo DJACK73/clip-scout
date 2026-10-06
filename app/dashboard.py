@@ -8,6 +8,7 @@ from app.get import video_id
 from app.profiler import load_rules
 from app.scout_router import find_candidates_ex
 from app.settings import settings
+from app.paths import free_disk_gb
 from app.slug import slug
 
 CATEGORIES: list[str] = ["foot", "anime", "audio"]
@@ -27,11 +28,12 @@ st.markdown("<style>[data-testid='stAppDeployButton']{display:none}</style>", un
 st.title("🎬 clip-scout")
 st.caption("Sourcing de rushs bruts · yt-dlp + FFprobe")
 _c = _counts()
-m1, m2, m3, m4 = st.columns(4)
+m1, m2, m3, m4, m5 = st.columns(5)
 m1.metric("Téléchargés", _c.get("ok", 0))
 m2.metric("Rejetés", _c.get("rejected_inspect", 0) + _c.get("rejected_quality", 0))
 m3.metric("Échecs", _c.get("failed", 0))
 m4.metric("Supprimés", _c.get("purged", 0))
+m5.metric("Disque libre", f"{free_disk_gb():.0f} Go")
 
 def _open_folder() -> None:
     win = subprocess.run(["wslpath", "-w", str(settings.base_storage_path)], capture_output=True, text=True).stdout.strip()
@@ -184,6 +186,17 @@ def _purge_category(cat: str) -> tuple[int, int]:
 
 _STATUS_COLORS: dict[str, str] = {"ok": "green", "failed": "red", "rejected_inspect": "orange", "rejected_quality": "orange", "excluded_game": "gray", "pending": "blue"}
 
+def _stepper(active: int) -> str:
+    parts = []
+    for i, name in enumerate(["Chercher", "Choisir", "Télécharger"]):
+        if i < active:
+            parts.append(f":green[✓ {name}]")
+        elif i == active:
+            parts.append(f":orange[● **{name}**]")
+        else:
+            parts.append(f":gray[{name}]")
+    return " → ".join(parts)
+
 def _fmt_dur(d: float | None) -> str:
     if not d:
         return "?"
@@ -203,6 +216,7 @@ with tab_url:
             st.error(str(exc))
 
 with tab_search:
+    step_slot = st.empty()
     c1, c2, c3 = st.columns([2, 4, 4])
     s_cat = c1.selectbox("Catégorie", CATEGORIES, key="s_cat", format_func=CAT_LABELS.get)
     subject = c2.text_input("Sujet", placeholder="black clover")
@@ -254,31 +268,32 @@ with tab_db:
     st.dataframe(view, width="stretch", hide_index=True, column_config={"lien": st.column_config.LinkColumn("Lien", display_text="Ouvrir")})
     st.caption(f"{len(view)} / {len(rows)} lignes")
     st.divider()
-    st.subheader("🧹 Nettoyage manuel")
-    st.caption("Supprime les vidéos téléchargées (statut ok) d'une catégorie ; la ligne reste en base avec le statut purged.")
     msg = st.session_state.pop("purge_msg", None)
     if msg:
         st.success(msg)
-    for col, pcat in zip(st.columns(3), CATEGORIES):
-        pfiles = _category_files(pcat)
-        pmb = sum(p.stat().st_size for _, p in pfiles) // 1_000_000
-        col.metric(CAT_LABELS[pcat], f"{len(pfiles)} fichiers")
-        col.caption(f"{pmb} Mo")
-        if col.button(f"🗑️ Supprimer {pcat}", key=f"purge_{pcat}", disabled=not pfiles, width="stretch"):
-            st.session_state["purge_ask"] = pcat
-    ask = st.session_state.get("purge_ask")
-    if ask:
-        afiles = _category_files(ask)
-        st.warning(f"Supprimer définitivement {len(afiles)} vidéo(s) de {ask} ?")
-        yes, no = st.columns(2)
-        if yes.button("Confirmer la suppression", key="purge_yes", type="primary", width="stretch"):
-            n, mb = _purge_category(ask)
-            st.session_state.pop("purge_ask", None)
-            st.session_state["purge_msg"] = f"{n} vidéo(s) supprimée(s) ({mb} Mo) — {ask}"
-            st.rerun()
-        if no.button("Annuler", key="purge_no", width="stretch"):
-            st.session_state.pop("purge_ask", None)
-            st.rerun()
+    with st.expander("🧹 Nettoyage manuel (à faire à la fin)", expanded=bool(st.session_state.get("purge_ask"))):
+        st.caption("Supprime les vidéos téléchargées (statut ok) d'une catégorie ; la ligne reste en base avec le statut purged.")
+        for col, pcat in zip(st.columns(3), CATEGORIES):
+            pfiles = _category_files(pcat)
+            pmb = sum(p.stat().st_size for _, p in pfiles) // 1_000_000
+            col.metric(CAT_LABELS[pcat], f"{len(pfiles)} fichiers")
+            col.caption(f"{pmb} Mo")
+            if col.button(f"🗑️ Supprimer {pcat}", key=f"purge_{pcat}", disabled=not pfiles, width="stretch"):
+                st.session_state["purge_ask"] = pcat
+        ask = st.session_state.get("purge_ask")
+        if ask:
+            afiles = _category_files(ask)
+            st.warning(f"Supprimer définitivement {len(afiles)} vidéo(s) de {ask} ?")
+            yes, no = st.columns(2)
+            if yes.button("Confirmer la suppression", key="purge_yes", type="primary", width="stretch"):
+                n, mb = _purge_category(ask)
+                st.session_state.pop("purge_ask", None)
+                st.session_state["purge_msg"] = f"{n} vidéo(s) supprimée(s) ({mb} Mo) — {ask}"
+                st.rerun()
+            if no.button("Annuler", key="purge_no", width="stretch"):
+                st.session_state.pop("purge_ask", None)
+                st.rerun()
 
 with panel:
     st.fragment(render_job, run_every=5 if busy() else None)()
+step_slot.markdown(_stepper(2 if busy() else 1 if state["items"] else 0))
