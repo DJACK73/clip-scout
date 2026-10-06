@@ -101,7 +101,7 @@
           "one vs one"
         ]
       },
-      "min_fps": 50,
+      "min_fps": 29,
       "min_kbps": 4000,
       "max_duration_sec": 500,
       "action_min_fps": {
