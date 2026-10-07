@@ -43,6 +43,12 @@ def _min_height(category: str, kind: str = "raw") -> int | None:
     r = json.loads((ROOT / "config" / "rules.json").read_text(encoding="utf-8"))["categories"][category]
     return r.get("min_height")
 
+def _max_duration(category: str, kind: str = "raw") -> int | None:
+    if kind == "pack":
+        return None
+    r = json.loads((ROOT / "config" / "rules.json").read_text(encoding="utf-8"))["categories"][category]
+    return r.get("max_duration_sec")
+
 def _is_bot_check(err: Exception) -> bool:
     return BOT_MARKER in str(err) or "confirm you're not a bot" in str(err)
 
@@ -55,7 +61,7 @@ def process(candidate: dict[str, Any], category: str, subject: str, action: str,
     register_task(vid, category, subject, action, candidate["url"], kind)
     set_meta(vid, candidate.get("title"), candidate.get("channel"))
     try:
-        meta = inspect(candidate["url"], *_thresholds(category, kind, action), min_height=_min_height(category, kind), min_duration=_min_duration(category))
+        meta = inspect(candidate["url"], *_thresholds(category, kind, action), min_height=_min_height(category, kind), min_duration=_min_duration(category), max_duration=_max_duration(category, kind))
     except QualityRejected as e:
         set_meta(vid, e.title or candidate.get("title"), e.channel or candidate.get("channel"))
         update_status(vid, "rejected_inspect", reason=str(e)[:300])

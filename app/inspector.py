@@ -28,11 +28,12 @@ def best_video_format(info: dict[str, Any]) -> dict[str, Any]:
         return 2 if v.startswith("avc1") else 1 if v.startswith("vp9") else 0
     return max(fmts, key=lambda f: (f["height"], f.get("fps") or 0, codec_rank(f), f.get("tbr") or 0))
 
-def _evaluate(info: dict[str, Any], min_fps: float | None = None, min_kbps: int | None = None, min_height: int | None = None, min_duration: int | None = None) -> dict[str, Any]:
+def _evaluate(info: dict[str, Any], min_fps: float | None = None, min_kbps: int | None = None, min_height: int | None = None, min_duration: int | None = None, max_duration: int | None = None) -> dict[str, Any]:
     if info.get("live_status") in {"is_live", "is_upcoming"}:
         raise QualityRejected("live/upcoming")
     dur = int(info.get("duration") or 0)
-    if not (settings.min_video_duration_sec if min_duration is None else min_duration) <= dur <= settings.max_video_duration_sec:
+    cap = settings.max_video_duration_sec if max_duration is None else min(max_duration, settings.max_video_duration_sec)
+    if not (settings.min_video_duration_sec if min_duration is None else min_duration) <= dur <= cap:
         raise QualityRejected(f"durée {dur}s hors bornes")
     fmt = best_video_format(info)
     if fmt["height"] < (settings.min_video_height if min_height is None else min_height):
@@ -55,10 +56,10 @@ def _evaluate(info: dict[str, Any], min_fps: float | None = None, min_kbps: int 
         "channel": info.get("channel") or info.get("uploader"),
     }
 
-def inspect(url: str, min_fps: float | None = None, min_kbps: int | None = None, min_height: int | None = None, min_duration: int | None = None) -> dict[str, Any]:
+def inspect(url: str, min_fps: float | None = None, min_kbps: int | None = None, min_height: int | None = None, min_duration: int | None = None, max_duration: int | None = None) -> dict[str, Any]:
     info = fetch_info(url)
     try:
-        return _evaluate(info, min_fps, min_kbps, min_height, min_duration)
+        return _evaluate(info, min_fps, min_kbps, min_height, min_duration, max_duration)
     except QualityRejected as e:
         e.title = info.get("title")
         e.channel = info.get("channel") or info.get("uploader")
