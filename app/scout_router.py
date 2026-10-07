@@ -1,10 +1,11 @@
 import re
 from collections import Counter
 from app.ranker import rank
-from app.database import norm_title, seen_titles
+from app.database import norm_title, seen_titles, video_statuses
 
 NOISE: set[str] = {"review", "reaction", "react", "reacts", "explained", "explanation", "debate", "theory", "theories", "news", "trailer", "podcast", "discussion", "recap", "breakdown", "analysis", "confirmed", "leak", "leaks", "ranking", "ranked", "réaction", "analyse", "débat", "explication"}
 NOISE_PENALTY: int = 8
+REFILL: set[str] = {"purged", "failed", "needs_confirm"}
 
 def _demote(entries: list[dict]) -> list[dict]:
     out = []
@@ -25,7 +26,15 @@ def find_candidates_ex(category: str, subject: str, action: str, limit: int = 5,
     before = len(ranked)
     ranked = [e for e in ranked if norm_title(e["title"]) not in seen]
     stats["duplicate_title"] = before - len(ranked)
-    return ranked[:limit], stats
+    st = video_statuses([e["video_id"] for e in ranked])
+    fresh = [e for e in ranked if e["video_id"] not in st]
+    fill = [e for e in ranked if st.get(e["video_id"]) in REFILL]
+    stats["seen_rejected"] = len(ranked) - len(fresh) - len(fill)
+    out = fresh[:limit]
+    if len(out) < limit:
+        out += fill[: limit - len(out)]
+        stats["refilled"] = len(out) - len(fresh[:limit])
+    return out, stats
 
 def find_candidates(category: str, subject: str, action: str, limit: int = 5, kind: str = "raw") -> list[dict]:
     return find_candidates_ex(category, subject, action, limit, kind)[0]

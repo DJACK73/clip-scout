@@ -102,6 +102,8 @@
         ]
       },
       "min_fps": 29,
+      "confirm_below_fps": 50,
+      "confirm_min_kbps": 2000,
       "min_kbps": 4000,
       "max_duration_sec": 500,
       "action_min_fps": {

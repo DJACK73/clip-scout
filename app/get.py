@@ -16,11 +16,12 @@ def main() -> None:
     ap.add_argument("--subject", default="manual")
     ap.add_argument("--action", default="manual")
     ap.add_argument("--kind", default="raw", choices=["raw", "pack", "edit"])
+    ap.add_argument("--allow-low-fps", action="store_true")
     a = ap.parse_args()
     a.subject = a.subject.strip().lower()
     a.action = a.action.strip().lower()
     init_db()
-    res = process({"video_id": video_id(a.url), "url": a.url}, a.category, a.subject, a.action, a.kind)
+    res = process({"video_id": video_id(a.url), "url": a.url}, a.category, a.subject, a.action, a.kind, a.allow_low_fps)
     print(res.data or f"{res.status}: {res.reason}")
 
 if __name__ == "__main__":

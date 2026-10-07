@@ -49,10 +49,22 @@ def _max_duration(category: str, kind: str = "raw") -> int | None:
     r = json.loads((ROOT / "config" / "rules.json").read_text(encoding="utf-8"))["categories"][category]
     return r.get("max_duration_sec")
 
+def _confirm_fps(category: str, kind: str = "raw") -> float | None:
+    if kind != "raw":
+        return None
+    r = json.loads((ROOT / "config" / "rules.json").read_text(encoding="utf-8"))["categories"][category]
+    return r.get("confirm_below_fps")
+
+def _confirm_kbps(category: str, kind: str = "raw") -> int | None:
+    if kind != "raw":
+        return None
+    r = json.loads((ROOT / "config" / "rules.json").read_text(encoding="utf-8"))["categories"][category]
+    return r.get("confirm_min_kbps")
+
 def _is_bot_check(err: Exception) -> bool:
     return BOT_MARKER in str(err) or "confirm you're not a bot" in str(err)
 
-def process(candidate: dict[str, Any], category: str, subject: str, action: str, kind: str = "raw") -> Outcome:
+def process(candidate: dict[str, Any], category: str, subject: str, action: str, kind: str = "raw", allow_low_fps: bool = False) -> Outcome:
     vid = candidate["video_id"]
     subject = subject.strip().lower()
     action = action.strip().lower()
@@ -61,7 +73,11 @@ def process(candidate: dict[str, Any], category: str, subject: str, action: str,
     register_task(vid, category, subject, action, candidate["url"], kind)
     set_meta(vid, candidate.get("title"), candidate.get("channel"))
     try:
-        meta = inspect(candidate["url"], *_thresholds(category, kind, action), min_height=_min_height(category, kind), min_duration=_min_duration(category), max_duration=_max_duration(category, kind))
+        fps_t, kbps_t = _thresholds(category, kind, action)
+        confirm = _confirm_fps(category, kind)
+        floor = _confirm_kbps(category, kind)
+        insp_kbps = min(kbps_t, floor) if confirm and floor and kbps_t else kbps_t
+        meta = inspect(candidate["url"], fps_t, insp_kbps, min_height=_min_height(category, kind), min_duration=_min_duration(category), max_duration=_max_duration(category, kind))
     except QualityRejected as e:
         set_meta(vid, e.title or candidate.get("title"), e.channel or candidate.get("channel"))
         update_status(vid, "rejected_inspect", reason=str(e)[:300])
@@ -75,6 +91,18 @@ def process(candidate: dict[str, Any], category: str, subject: str, action: str,
         log(f"{vid} inspect échec: {e}")
         return Outcome(vid, "failed", str(e)[:300])
     set_meta(vid, meta.get("title"), meta.get("channel"))
+    low = bool(confirm) and meta["fps"] < confirm - 1
+    if low and not allow_low_fps:
+        why = f"fps {meta['fps']} < {confirm}: autorisation requise"
+        update_status(vid, "needs_confirm", reason=why)
+        log(f"{vid} autorisation requise: {why}")
+        return Outcome(vid, "needs_confirm", why)
+    chk_kbps = insp_kbps if low else kbps_t
+    if not low and kbps_t and meta.get("tbr") and meta["tbr"] < kbps_t - 90:
+        why = f"bitrate estimé {int(meta['tbr'])}kbps < {kbps_t}"
+        update_status(vid, "rejected_inspect", reason=why)
+        log(f"{vid} rejeté (inspect): {why}")
+        return Outcome(vid, "rejected_inspect", why)
     tbr = round(meta["tbr"]) if meta.get("tbr") else None
     path = None
     last_err = ""
@@ -95,7 +123,7 @@ def process(candidate: dict[str, Any], category: str, subject: str, action: str,
         return Outcome(vid, "failed", last_err)
     update_status(vid, "downloaded", file_path=str(path))
     try:
-        report = check(path, *_thresholds(category, kind, action))
+        report = check(path, fps_t, chk_kbps)
     except QualityRejected as e:
         path.unlink(missing_ok=True)
         update_status(vid, "rejected_quality", reason=str(e)[:300])

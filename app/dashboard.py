@@ -92,16 +92,18 @@ def busy() -> bool:
         return True
     return bool(running_jobs())
 
-def launch(candidate: dict, category: str, subject: str, action: str, kind: str) -> None:
+def launch(candidate: dict, category: str, subject: str, action: str, kind: str, allow_low_fps: bool = False) -> None:
     vid = candidate["video_id"]
     url = candidate.get("url") or f"https://www.youtube.com/watch?v={vid}"
     LOGS.mkdir(exist_ok=True)
     log = LOGS / f"{vid}.log"
     cmd = [sys.executable, "-m", "app.get", url, "--category", category, "--subject", subject, "--action", action, "--kind", kind]
+    if allow_low_fps:
+        cmd.append("--allow-low-fps")
     with log.open("w") as fh:
         proc = subprocess.Popen(cmd, cwd=ROOT, stdout=fh, stderr=subprocess.STDOUT, start_new_session=True)
     (LOGS / f"{vid}.pid").write_text(str(proc.pid))
-    st.session_state["job"] = {"proc": proc, "video_id": vid, "log": str(log)}
+    st.session_state["job"] = {"proc": proc, "video_id": vid, "log": str(log), "args": (candidate, category, subject, action, kind)}
 
 def render_job() -> None:
     job = st.session_state.get("job")
@@ -138,16 +140,19 @@ def render_job() -> None:
         st.success(f"{job['video_id']} — statut : ok")
     else:
         st.warning(f"{job['video_id']} — statut : {status}" + (f" — {reason}" if reason else ""))
+        if status == "needs_confirm" and job.get("args") and st.button("Autoriser fps bas", key="allow_fps_job"):
+            launch(*job["args"], allow_low_fps=True)
+            st.rerun()
     st.code("\n".join(Path(job["log"]).read_text().strip().splitlines()[-3:]))
     if not job.get("done"):
         job["done"] = True
         st.rerun()
 
-def download(candidate: dict, category: str, subject: str, action: str, kind: str) -> None:
+def download(candidate: dict, category: str, subject: str, action: str, kind: str, allow_low_fps: bool = False) -> None:
     if busy():
         st.warning("Un téléchargement est déjà en cours")
         return
-    launch(candidate, category, subject, action, kind)
+    launch(candidate, category, subject, action, kind, allow_low_fps)
 
 def _progress(log: str) -> float | None:
     try:
@@ -184,7 +189,7 @@ def _purge_category(cat: str) -> tuple[int, int]:
             pass
     return len(files), size // 1_000_000
 
-_STATUS_COLORS: dict[str, str] = {"ok": "green", "failed": "red", "rejected_inspect": "orange", "rejected_quality": "orange", "excluded_game": "gray", "pending": "blue"}
+_STATUS_COLORS: dict[str, str] = {"ok": "green", "failed": "red", "rejected_inspect": "orange", "rejected_quality": "orange", "excluded_game": "gray", "pending": "blue", "needs_confirm": "violet"}
 
 def _stepper(active: int) -> str:
     parts = []
@@ -233,20 +238,23 @@ with tab_search:
     if st.button("Chercher", type="primary", disabled=not (subj and action)):
         with st.spinner("Recherche en cours…"):
             items, stats = find_candidates_ex(s_cat, subj, action, int(limit), s_kind, precision.strip(), free)
-        st.session_state["search"] = {"ctx": (s_cat, subj, store_action, s_kind), "items": items, "stats": dict(stats)}
+        st.session_state["search"] = {"ctx": (s_cat, subj, store_action, s_kind), "items": items, "stats": dict(stats), "limit": int(limit)}
     state = st.session_state.get("search", {"ctx": (s_cat, subject, action, s_kind), "items": [], "stats": {}})
     statuses = {r["video_id"]: r["status"] for r in get_connection().execute("select video_id, status from downloads")}
     ctx = state["ctx"]
     if state["stats"]:
-        st.markdown(f"**{state['stats'].get('kept', 0)}** retenus")
+        st.markdown(f"**{len(state['items'])}** affichés · limite {state.get('limit', '?')}")
         with st.expander("Détails du filtrage"):
             st.caption(" · ".join(f"{k}: {v}" for k, v in state["stats"].items() if v))
+    if state["items"] and state.get("limit") not in (None, int(limit)):
+        st.warning(f"Résultats obtenus avec la limite {state['limit']} (champ actuel : {int(limit)}) : relance Chercher.")
     if "search" in st.session_state and not state["items"]:
         st.info("Aucun candidat retenu : élargis le sujet ou change l'action.")
     for i, cand in enumerate(state["items"]):
         status = statuses.get(cand["video_id"])
         vid = cand["video_id"]
-        blocked = busy() or (status is not None and status != "failed")
+        need = status == "needs_confirm"
+        blocked = busy() or status in ("ok", "pending", "downloaded", "excluded_game")
         with st.container(border=True):
             img, body, act = st.columns([2, 6, 2], vertical_alignment="center")
             img.image(f"https://i.ytimg.com/vi/{vid}/mqdefault.jpg", width=170)
@@ -255,8 +263,8 @@ with tab_search:
             if status:
                 body.markdown(f":{_STATUS_COLORS.get(status, 'gray')}-badge[{status}]")
             act.link_button("Ouvrir", f"https://www.youtube.com/watch?v={vid}", width="stretch")
-            if act.button("Télécharger", key=f"dl_{i}", disabled=blocked, type="primary", width="stretch"):
-                download(cand, *ctx)
+            if act.button("Autoriser fps bas" if need else "Télécharger", key=f"dl_{i}", disabled=blocked, type="primary", width="stretch"):
+                download(cand, *ctx, allow_low_fps=need)
 
 with tab_db:
     raw_rows = [dict(r) for r in get_connection().execute("select * from downloads order by rowid desc")]

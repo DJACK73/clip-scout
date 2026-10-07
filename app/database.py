@@ -35,13 +35,13 @@ def init_db() -> None:
 
 def is_duplicate(video_id: str) -> bool:
     conn = get_connection()
-    row = conn.execute("SELECT 1 FROM downloads WHERE video_id = ? AND status != 'failed'", (video_id,)).fetchone()
+    row = conn.execute("SELECT 1 FROM downloads WHERE video_id = ? AND status IN ('ok', 'pending', 'downloaded', 'excluded_game')", (video_id,)).fetchone()
     conn.close()
     return row is not None
 
 def register_task(video_id: str, category: str, subject: str, action: str, source_url: str, kind: str = "raw") -> int:
     conn = get_connection()
-    conn.execute("DELETE FROM downloads WHERE video_id = ? AND status = 'failed'", (video_id,))
+    conn.execute("DELETE FROM downloads WHERE video_id = ? AND status NOT IN ('ok', 'pending', 'downloaded', 'excluded_game')", (video_id,))
     cur = conn.execute(
         "INSERT INTO downloads (video_id, category, subject, action, source_url, kind) VALUES (?, ?, ?, ?, ?, ?)",
         (video_id, category, subject, action, source_url, kind)
@@ -70,12 +70,21 @@ def set_meta(video_id: str, title: str | None, channel: str | None) -> None:
     conn.commit()
     conn.close()
 
+def video_statuses(ids: list[str]) -> dict[str, str]:
+    if not ids:
+        return {}
+    conn = get_connection()
+    marks = ",".join("?" * len(ids))
+    rows = conn.execute(f"SELECT video_id, status FROM downloads WHERE video_id IN ({marks})", ids).fetchall()
+    conn.close()
+    return {r["video_id"]: r["status"] for r in rows}
+
 def norm_title(title: str) -> str:
     import re
     return re.sub(r"\W+", " ", (title or "").lower()).strip()
 
 def seen_titles(category: str) -> set[str]:
     conn = get_connection()
-    rows = conn.execute("SELECT title FROM downloads WHERE category = ? AND status != 'failed' AND title IS NOT NULL", (category,)).fetchall()
+    rows = conn.execute("SELECT title FROM downloads WHERE category = ? AND status IN ('ok', 'pending', 'downloaded', 'excluded_game') AND title IS NOT NULL", (category,)).fetchall()
     conn.close()
     return {norm_title(r[0]) for r in rows} - {""}
