@@ -224,12 +224,12 @@ with tab_search:
     step_slot = st.empty()
     c1, c2, c3 = st.columns([2, 4, 4])
     s_cat = c1.selectbox("Catégorie", CATEGORIES, key="s_cat", format_func=CAT_LABELS.get)
-    subject = c2.text_input("Sujet", placeholder="black clover")
-    precision = c3.text_input("Précision (optionnel)", placeholder="asta vs noelle")
+    subject = c2.text_input("Sujet")
+    precision = c3.text_input("Précision (optionnel)")
     d1, d2, d3, d4 = st.columns([3, 3, 2, 2])
     choice = d1.selectbox("Action", ACTIONS[s_cat] + [OTHER_ACTION], key="s_action")
     free = choice == OTHER_ACTION
-    custom = d2.text_input("Action libre", key="s_custom", placeholder="duel final", disabled=not free)
+    custom = d2.text_input("Action libre", key="s_custom", disabled=not free)
     s_kind = d3.selectbox("Type", KINDS, key="s_kind")
     limit = d4.number_input("Limite", 1, 20, 5)
     subj = subject.strip()
@@ -254,16 +254,19 @@ with tab_search:
         status = statuses.get(cand["video_id"])
         vid = cand["video_id"]
         need = status == "needs_confirm"
-        blocked = busy() or status in ("ok", "pending", "downloaded", "excluded_game")
+        dup = bool(cand.get("duplicate")) or status in ("ok", "pending", "downloaded", "excluded_game")
+        blocked = busy() or dup
         with st.container(border=True):
             img, body, act = st.columns([2, 6, 2], vertical_alignment="center")
             img.image(f"https://i.ytimg.com/vi/{vid}/mqdefault.jpg", width=170)
             body.markdown(f"**{cand['title']}**")
             body.caption(f"{_fmt_dur(cand.get('duration'))} · {cand.get('channel')} · score {cand.get('score', '?')} · `{vid}`")
-            if status:
+            if dup:
+                body.markdown(":orange-badge[doublon]" + (f" :gray-badge[{status}]" if status else " :gray-badge[titre déjà vu]"))
+            elif status:
                 body.markdown(f":{_STATUS_COLORS.get(status, 'gray')}-badge[{status}]")
             act.link_button("Ouvrir", f"https://www.youtube.com/watch?v={vid}", width="stretch")
-            if act.button("Autoriser fps bas" if need else "Télécharger", key=f"dl_{i}", disabled=blocked, type="primary", width="stretch"):
+            if act.button("Déjà téléchargé" if dup else "Autoriser fps bas" if need else "Télécharger", key=f"dl_{i}", disabled=blocked, type="primary", width="stretch"):
                 download(cand, *ctx, allow_low_fps=need)
 
 with tab_db:

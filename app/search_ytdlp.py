@@ -40,9 +40,6 @@ def _triage(raw: list[dict], category: str, subject: str, action: str, kind: str
         if reason:
             stats[f"excluded:{reason[:24]}"] += 1
             continue
-        if is_duplicate(video_id):
-            stats["duplicate"] += 1
-            continue
         ok = relevant(title, category, subject, action) if kind == "raw" else subject.lower() in title.lower()
         if not ok:
             stats["not_relevant"] += 1
@@ -50,12 +47,17 @@ def _triage(raw: list[dict], category: str, subject: str, action: str, kind: str
         if classify(title) != kind:
             stats["wrong_kind"] += 1
             continue
+        cand = _candidate(entry)
+        if is_duplicate(video_id):
+            stats["duplicate"] += 1
+            cand["duplicate"] = True
         stats["kept"] += 1
-        kept.append(_candidate(entry))
+        kept.append(cand)
     return kept, stats
 
 def search_ex(category: str, subject: str, action: str, limit: int = 10, kind: str = "raw", cap: int | None = None, precision: str = "", free: bool = False) -> tuple[list[dict], Counter]:
     total: Counter = Counter()
+    carry: list[dict] = []
     for i, level in enumerate(KEYWORD_LEVELS if kind == "raw" and not free else (0,)):
         if i:
             network_delay()
@@ -67,9 +69,10 @@ def search_ex(category: str, subject: str, action: str, limit: int = 10, kind: s
         total.update(stats)
         kept = kept[:cap or limit]
         log(f"Search '{query}': {len(raw)} bruts, {len(kept)} retenus, {dict(stats)}")
-        if kept:
+        if any(not c.get("duplicate") for c in kept):
             return kept, total
-    return [], total
+        carry = list({c["video_id"]: c for c in carry + kept}.values())
+    return carry, total
 
 def search(category: str, subject: str, action: str, limit: int = 10, kind: str = "raw") -> list[dict]:
     return search_ex(category, subject, action, limit, kind)[0]
