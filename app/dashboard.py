@@ -29,11 +29,11 @@ st.title("🎬 clip-scout")
 st.caption("Sourcing de rushs bruts · yt-dlp + FFprobe")
 _c = _counts()
 m1, m2, m3, m4, m5 = st.columns(5)
-m1.metric("Téléchargés", _c.get("ok", 0))
-m2.metric("Rejetés", _c.get("rejected_inspect", 0) + _c.get("rejected_quality", 0))
-m3.metric("Échecs", _c.get("failed", 0))
-m4.metric("Supprimés", _c.get("purged", 0))
-m5.metric("Disque libre", f"{free_disk_gb():.0f} Go")
+m1.metric("Téléchargés", _c.get("ok", 0), border=True)
+m2.metric("Rejetés", _c.get("rejected_inspect", 0) + _c.get("rejected_quality", 0), border=True)
+m3.metric("Échecs", _c.get("failed", 0), border=True)
+m4.metric("Supprimés", _c.get("purged", 0), border=True)
+m5.metric("Disque libre", f"{free_disk_gb():.0f} Go", border=True)
 
 def _open_folder() -> None:
     win = subprocess.run(["wslpath", "-w", str(settings.base_storage_path)], capture_output=True, text=True).stdout.strip()
@@ -246,6 +246,9 @@ with tab_search:
     ctx = state["ctx"]
     if state["stats"]:
         st.markdown(f"**{len(state['items'])}** affichés · limite {state.get('limit', '?')}")
+        _s = state["stats"]
+        _d, _r, _f = _s.get("shown_duplicates", 0), _s.get("shown_rejected", 0), _s.get("refilled", 0)
+        st.caption(f"{len(state['items']) - _d - _r - _f} neufs · {_f} complétés · {_d} doublons · {_r} rejetés")
         with st.expander("Détails du filtrage"):
             st.caption(" · ".join(f"{k}: {v}" for k, v in state["stats"].items() if v))
     if state["items"] and state.get("limit") not in (None, int(limit)):
@@ -257,7 +260,8 @@ with tab_search:
         vid = cand["video_id"]
         need = status == "needs_confirm"
         dup = bool(cand.get("duplicate")) or status in ("ok", "pending", "downloaded", "excluded_game")
-        blocked = busy() or dup
+        rej = bool(cand.get("rejected")) or status in ("rejected_inspect", "rejected_quality")
+        blocked = busy() or dup or rej
         with st.container(border=True):
             img, body, act = st.columns([2, 6, 2], vertical_alignment="center")
             img.image(f"https://i.ytimg.com/vi/{vid}/mqdefault.jpg", width=170)
@@ -265,12 +269,16 @@ with tab_search:
             body.caption(f"{_fmt_dur(cand.get('duration'))} · {cand.get('channel')} · score {cand.get('score', '?')} · `{vid}`")
             if dup:
                 body.markdown(":orange-badge[doublon]" + (f" :gray-badge[{status}]" if status else " :gray-badge[titre déjà vu]"))
+            elif rej:
+                body.markdown(":red-badge[rejeté]")
+                if reasons.get(vid):
+                    body.caption(reasons[vid])
             elif status:
                 body.markdown(f":{_STATUS_COLORS.get(status, 'gray')}-badge[{status}]")
                 if need and reasons.get(vid):
                     body.caption(reasons[vid])
             act.link_button("Ouvrir", f"https://www.youtube.com/watch?v={vid}", width="stretch")
-            if act.button("Déjà téléchargé" if dup else "Autoriser" if need else "Télécharger", key=f"dl_{i}", disabled=blocked, type="primary", width="stretch"):
+            if act.button("Déjà téléchargé" if dup else "Déjà rejeté" if rej else "Autoriser" if need else "Télécharger", key=f"dl_{i}", disabled=blocked, type="primary", width="stretch"):
                 download(cand, *ctx, allow_low_fps=need)
 
 with tab_db:

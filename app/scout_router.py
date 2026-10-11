@@ -7,6 +7,7 @@ NOISE: set[str] = {"review", "reaction", "react", "reacts", "explained", "explan
 NOISE_PENALTY: int = 8
 REFILL: set[str] = {"purged", "failed", "needs_confirm"}
 HARD: set[str] = {"ok", "pending", "downloaded", "excluded_game"}
+REJECTED: set[str] = {"rejected_inspect", "rejected_quality"}
 
 def _demote(entries: list[dict]) -> list[dict]:
     out = []
@@ -36,6 +37,7 @@ def find_candidates_ex(category: str, subject: str, action: str, limit: int = 5,
     fresh = [e for e in ranked if e["video_id"] not in st and e["video_id"] not in dup_ids]
     fill = [e for e in ranked if st.get(e["video_id"]) in REFILL and e["video_id"] not in dup_ids]
     stats["seen_rejected"] = len(ranked) - len(fresh) - len(fill) - len(dups)
+    rej = [e for e in ranked if st.get(e["video_id"]) in REJECTED and e["video_id"] not in dup_ids]
     out = fresh[:limit]
     n_fresh = len(out)
     if len(out) < limit:
@@ -43,9 +45,13 @@ def find_candidates_ex(category: str, subject: str, action: str, limit: int = 5,
     n_fill = len(out) - n_fresh
     if len(out) < limit:
         out += [{**e, "duplicate": True} for e in dups[: limit - len(out)]]
+    n_dup = len(out) - n_fresh - n_fill
+    if len(out) < limit:
+        out += [{**e, "rejected": True} for e in rej[: limit - len(out)]]
     stats["refilled"] = n_fill
-    stats["shown_duplicates"] = len(out) - n_fresh - n_fill
+    stats["shown_duplicates"] = n_dup
+    stats["shown_rejected"] = len(out) - n_fresh - n_fill - n_dup
     return out, stats
 
 def find_candidates(category: str, subject: str, action: str, limit: int = 5, kind: str = "raw") -> list[dict]:
-    return [c for c in find_candidates_ex(category, subject, action, limit, kind)[0] if not c.get("duplicate")]
+    return [c for c in find_candidates_ex(category, subject, action, limit, kind)[0] if not c.get("duplicate") and not c.get("rejected")]

@@ -90,7 +90,7 @@ def process(candidate: dict[str, Any], category: str, subject: str, action: str,
         return Outcome(vid, "failed", str(e)[:300])
     set_meta(vid, meta.get("title"), meta.get("channel"))
     issues = list(meta.get("issues", []))
-    if confirm and meta["fps"] < confirm - 1:
+    if confirm and meta["fps"] < confirm - 1 and not any(i.startswith("fps") for i in issues):
         issues.append(f"fps {meta['fps']} < {confirm}")
     if issues and not allow_low_fps:
         why = (" ; ".join(issues) + " : autorisation requise")[:300]
