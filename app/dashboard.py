@@ -140,7 +140,7 @@ def render_job() -> None:
         st.success(f"{job['video_id']} — statut : ok")
     else:
         st.warning(f"{job['video_id']} — statut : {status}" + (f" — {reason}" if reason else ""))
-        if status == "needs_confirm" and job.get("args") and st.button("Autoriser fps bas", key="allow_fps_job"):
+        if status == "needs_confirm" and job.get("args") and st.button("Autoriser et télécharger", key="allow_fps_job"):
             launch(*job["args"], allow_low_fps=True)
             st.rerun()
     st.code("\n".join(Path(job["log"]).read_text().strip().splitlines()[-3:]))
@@ -240,7 +240,9 @@ with tab_search:
             items, stats = find_candidates_ex(s_cat, subj, action, int(limit), s_kind, precision.strip(), free)
         st.session_state["search"] = {"ctx": (s_cat, subj, store_action, s_kind), "items": items, "stats": dict(stats), "limit": int(limit)}
     state = st.session_state.get("search", {"ctx": (s_cat, subject, action, s_kind), "items": [], "stats": {}})
-    statuses = {r["video_id"]: r["status"] for r in get_connection().execute("select video_id, status from downloads")}
+    _rows = get_connection().execute("select video_id, status, reason from downloads").fetchall()
+    statuses = {r["video_id"]: r["status"] for r in _rows}
+    reasons = {r["video_id"]: r["reason"] for r in _rows}
     ctx = state["ctx"]
     if state["stats"]:
         st.markdown(f"**{len(state['items'])}** affichés · limite {state.get('limit', '?')}")
@@ -265,8 +267,10 @@ with tab_search:
                 body.markdown(":orange-badge[doublon]" + (f" :gray-badge[{status}]" if status else " :gray-badge[titre déjà vu]"))
             elif status:
                 body.markdown(f":{_STATUS_COLORS.get(status, 'gray')}-badge[{status}]")
+                if need and reasons.get(vid):
+                    body.caption(reasons[vid])
             act.link_button("Ouvrir", f"https://www.youtube.com/watch?v={vid}", width="stretch")
-            if act.button("Déjà téléchargé" if dup else "Autoriser fps bas" if need else "Télécharger", key=f"dl_{i}", disabled=blocked, type="primary", width="stretch"):
+            if act.button("Déjà téléchargé" if dup else "Autoriser" if need else "Télécharger", key=f"dl_{i}", disabled=blocked, type="primary", width="stretch"):
                 download(cand, *ctx, allow_low_fps=need)
 
 with tab_db:

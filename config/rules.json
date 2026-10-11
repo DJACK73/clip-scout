@@ -103,9 +103,9 @@
       },
       "min_fps": 29,
       "confirm_below_fps": 50,
-      "confirm_min_kbps": 2000,
+      "soft": ["height", "fps", "kbps"],
       "min_kbps": 4000,
-      "max_duration_sec": 500,
+      "max_duration_sec": 600,
       "action_min_fps": {
         "tiki_taka": 30
       },
@@ -136,7 +136,8 @@
       ],
       "min_fps": 24,
       "min_kbps": 2000,
-      "max_duration_sec": 500,
+      "soft": ["height", "fps", "kbps"],
+      "max_duration_sec": 600,
       "action_aliases": {
         "fights_aura": [
           "fight scene",
@@ -228,6 +229,7 @@
       "min_kbps": 1000,
       "min_height": 0,
       "min_duration_sec": 1,
+      "soft": ["fps", "kbps"],
       "max_duration_sec": 600,
       "action_aliases": {
         "trending_music": [

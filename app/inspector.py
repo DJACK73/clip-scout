@@ -28,7 +28,7 @@ def best_video_format(info: dict[str, Any]) -> dict[str, Any]:
         return 2 if v.startswith("avc1") else 1 if v.startswith("vp9") else 0
     return max(fmts, key=lambda f: (f["height"], f.get("fps") or 0, codec_rank(f), f.get("tbr") or 0))
 
-def _evaluate(info: dict[str, Any], min_fps: float | None = None, min_kbps: int | None = None, min_height: int | None = None, min_duration: int | None = None, max_duration: int | None = None) -> dict[str, Any]:
+def _evaluate(info: dict[str, Any], min_fps: float | None = None, min_kbps: int | None = None, min_height: int | None = None, min_duration: int | None = None, max_duration: int | None = None, soft: set[str] | None = None) -> dict[str, Any]:
     if info.get("live_status") in {"is_live", "is_upcoming"}:
         raise QualityRejected("live/upcoming")
     dur = int(info.get("duration") or 0)
@@ -36,14 +36,22 @@ def _evaluate(info: dict[str, Any], min_fps: float | None = None, min_kbps: int 
     if not (settings.min_video_duration_sec if min_duration is None else min_duration) <= dur <= cap:
         raise QualityRejected(f"durée {dur}s hors bornes")
     fmt = best_video_format(info)
-    if fmt["height"] < (settings.min_video_height if min_height is None else min_height):
-        raise QualityRejected(f"hauteur {fmt['height']}p")
+    sf = soft or set()
+    issues: list[str] = []
+    def flag(kind: str, msg: str) -> None:
+        if kind not in sf:
+            raise QualityRejected(msg)
+        issues.append(msg)
+    min_h = settings.min_video_height if min_height is None else min_height
+    if fmt["height"] < min_h:
+        flag("height", f"hauteur {fmt['height']}p < {min_h}p")
     fps = float(fmt.get("fps") or 0)
-    if fps < (min_fps if min_fps is not None else settings.min_video_fps) - 1:
-        raise QualityRejected(f"fps {fps}")
+    min_f = min_fps if min_fps is not None else settings.min_video_fps
+    if fps < min_f - 1:
+        flag("fps", f"fps {fps} < {min_f}")
     tbr = fmt.get("tbr")
     if min_kbps and tbr and tbr < min_kbps - 90:
-        raise QualityRejected(f"bitrate estimé {int(tbr)}kbps < {min_kbps}")
+        flag("kbps", f"bitrate estimé {int(tbr)}kbps < {min_kbps}")
     return {
         "video_id": info["id"],
         "title": info["title"],
@@ -54,12 +62,13 @@ def _evaluate(info: dict[str, Any], min_fps: float | None = None, min_kbps: int 
         "tbr": fmt.get("tbr"),
         "url": info["webpage_url"],
         "channel": info.get("channel") or info.get("uploader"),
+        "issues": issues,
     }
 
-def inspect(url: str, min_fps: float | None = None, min_kbps: int | None = None, min_height: int | None = None, min_duration: int | None = None, max_duration: int | None = None) -> dict[str, Any]:
+def inspect(url: str, min_fps: float | None = None, min_kbps: int | None = None, min_height: int | None = None, min_duration: int | None = None, max_duration: int | None = None, soft: set[str] | None = None) -> dict[str, Any]:
     info = fetch_info(url)
     try:
-        return _evaluate(info, min_fps, min_kbps, min_height, min_duration, max_duration)
+        return _evaluate(info, min_fps, min_kbps, min_height, min_duration, max_duration, soft)
     except QualityRejected as e:
         e.title = info.get("title")
         e.channel = info.get("channel") or info.get("uploader")
