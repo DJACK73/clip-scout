@@ -16,7 +16,10 @@
         "headers",
         "counter_attacks",
         "hattricks",
-        "one_vs_one"
+        "one_vs_one",
+        "strength_duels",
+        "best_moments",
+        "crazy_moments"
       ],
       "forced_keywords": [
         "60fps",
@@ -103,14 +106,29 @@
       },
       "min_fps": 29,
       "confirm_below_fps": 50,
-      "soft": ["height", "fps", "kbps"],
+      "soft": [
+        "height",
+        "fps",
+        "kbps"
+      ],
       "min_kbps": 4000,
-      "max_duration_sec": 600,
+      "max_duration_sec": 720,
       "action_min_fps": {
         "tiki_taka": 30
       },
       "action_min_kbps": {
         "tiki_taka": 2000
+      },
+      "action_forced_keywords": {
+        "strength_duels": [
+          "compilation"
+        ],
+        "best_moments": [
+          "compilation"
+        ],
+        "crazy_moments": [
+          "compilation"
+        ]
       }
     },
     "anime": {
@@ -136,7 +154,11 @@
       ],
       "min_fps": 24,
       "min_kbps": 2000,
-      "soft": ["height", "fps", "kbps"],
+      "soft": [
+        "height",
+        "fps",
+        "kbps"
+      ],
       "max_duration_sec": 600,
       "action_aliases": {
         "fights_aura": [
@@ -225,11 +247,23 @@
         "clean audio"
       ],
       "min_fps": 24,
-      "action_forced_keywords": {"trending_music": [], "voicelines": [], "sfx": [], "phonk": [], "ambience": [], "transitions": [], "meme_sounds": [], "cinematic_hits": []},
+      "action_forced_keywords": {
+        "trending_music": [],
+        "voicelines": [],
+        "sfx": [],
+        "phonk": [],
+        "ambience": [],
+        "transitions": [],
+        "meme_sounds": [],
+        "cinematic_hits": []
+      },
       "min_kbps": 1000,
       "min_height": 0,
       "min_duration_sec": 1,
-      "soft": ["fps", "kbps"],
+      "soft": [
+        "fps",
+        "kbps"
+      ],
       "max_duration_sec": 600,
       "action_aliases": {
         "trending_music": [
