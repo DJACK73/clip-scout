@@ -129,7 +129,18 @@
         "crazy_moments": [
           "compilation"
         ]
-      }
+      },
+      "subject_optional": [
+        "strength_duels",
+        "best_moments",
+        "crazy_moments"
+      ],
+      "subject_examples": {
+        "strength_duels": "ex. haaland, lukaku — vide = tous joueurs",
+        "best_moments": "ex. haaland, mbappe — vide = tous joueurs",
+        "crazy_moments": "ex. un joueur ou vide = tous joueurs"
+      },
+      "empty_subject_term": "football"
     },
     "anime": {
       "actions": [

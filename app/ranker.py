@@ -20,7 +20,7 @@ def score(entry: dict, category: str, subject: str, action: str, precision: str 
     rules = _category_rules(category)
     title = entry["title"].lower()
     total = 0
-    subj = _tokens(subject)
+    subj = _tokens(subject) if subject.strip() else _tokens(rules.get("empty_subject_term", ""))
     total += 3 * len(subj & _tokens(title))
     aliases = rules.get("action_aliases", {}).get(action, []) + [action.replace("_", " ")]
     if any(a in title for a in aliases):
@@ -37,7 +37,7 @@ def _has_action(title: str, category: str, action: str) -> bool:
     return any(a.lower() in low for a in aliases)
 
 def relevant(title: str, category: str, subject: str, action: str) -> bool:
-    return bool(_tokens(subject) & _tokens(title)) and _has_action(title, category, action)
+    return (not subject.strip() or bool(_tokens(subject) & _tokens(title))) and _has_action(title, category, action)
 
 def rank(entries: list[dict], category: str, subject: str, action: str, kind: str = "raw", precision: str = "") -> list[dict]:
     out = []

@@ -21,7 +21,7 @@ def find_candidates_ex(category: str, subject: str, action: str, limit: int = 5,
     raw, stats = search_ex(category, subject, action, limit * 4, kind, cap=limit * 8, precision=precision, free=free)
     hint = f"{precision} {action}".strip() if free else precision
     ranked = rank(raw, category, subject, action, kind, hint)
-    if free:
+    if free or not subject.strip():
         ranked = _demote(ranked)
     stats["rank_dropped"] = len(raw) - len(ranked)
     seen = seen_titles(category)

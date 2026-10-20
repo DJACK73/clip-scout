@@ -17,6 +17,7 @@ def validate(category: str, action: str, free: bool = False) -> None:
 def build_query(category: str, subject: str, action: str, sample_size: int = 3, precision: str = "", free: bool = False) -> str:
     validate(category, action, free)
     rules = load_rules()["categories"][category]
+    subject = subject.strip() or ("" if free else rules.get("empty_subject_term", ""))
     forced = [] if free else rules.get("action_forced_keywords", {}).get(action, rules["forced_keywords"])
     picked = forced[:sample_size]
     aliases = None if free else rules.get("action_aliases", {}).get(action)

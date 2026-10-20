@@ -223,7 +223,6 @@ with tab_search:
     step_slot = st.empty()
     c1, c2, c3 = st.columns([2, 4, 4])
     s_cat = c1.selectbox("Catégorie", CATEGORIES, key="s_cat", format_func=CAT_LABELS.get)
-    subject = c2.text_input("Sujet")
     precision = c3.text_input("Précision (optionnel)")
     d1, d2, d3, d4 = st.columns([3, 3, 2, 2])
     choice = d1.selectbox("Action", ACTIONS[s_cat] + [OTHER_ACTION], key="s_action")
@@ -231,13 +230,17 @@ with tab_search:
     custom = d2.text_input("Action libre", key="s_custom", disabled=not free)
     s_kind = d3.selectbox("Type", KINDS, key="s_kind")
     limit = d4.number_input("Limite", 1, 20, 5)
+    _frules = load_rules()["categories"][s_cat]
+    _opt = (not free) and s_kind == "raw" and choice in _frules.get("subject_optional", [])
+    _hint = "" if free else _frules.get("subject_examples", {}).get(choice, "")
+    subject = c2.text_input("Sujet" + (" (optionnel)" if _opt else ""), key="s_subject", placeholder=_hint)
     subj = subject.strip()
     action = custom.strip() if free else choice
     store_action = slug(action) if free else action
-    if st.button("Chercher", type="primary", disabled=not (subj and action)):
+    if st.button("Chercher", type="primary", disabled=not ((subj or _opt) and action)):
         with st.spinner("Recherche en cours…"):
             items, stats = find_candidates_ex(s_cat, subj, action, int(limit), s_kind, precision.strip(), free)
-        st.session_state["search"] = {"ctx": (s_cat, subj, store_action, s_kind), "items": items, "stats": dict(stats), "limit": int(limit)}
+        st.session_state["search"] = {"ctx": (s_cat, subj or "multi", store_action, s_kind), "items": items, "stats": dict(stats), "limit": int(limit)}
     state = st.session_state.get("search", {"ctx": (s_cat, subject, action, s_kind), "items": [], "stats": {}})
     _rows = status_reasons()
     statuses = {r["video_id"]: r["status"] for r in _rows}
