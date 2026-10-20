@@ -3,7 +3,7 @@ import subprocess
 import sys
 from pathlib import Path
 import streamlit as st
-from app.database import get_connection, init_db
+from app.database import all_downloads, init_db, job_row, ok_files, pending_ids, status_counts, status_reasons
 from app.get import video_id
 from app.profiler import load_rules
 from app.scout_router import find_candidates_ex
@@ -21,8 +21,7 @@ OTHER_ACTION: str = "✏️ Autre…"
 init_db()
 st.set_page_config(page_title="clip-scout", layout="wide")
 def _counts() -> dict[str, int]:
-    rows = get_connection().execute("select status, count(*) as n from downloads group by status").fetchall()
-    return {r["status"]: r["n"] for r in rows}
+    return status_counts()
 
 st.markdown("<style>[data-testid='stAppDeployButton']{display:none}</style>", unsafe_allow_html=True)
 st.title("🎬 clip-scout")
@@ -115,7 +114,7 @@ def render_job() -> None:
                 cancel()
                 st.rerun()
         else:
-            stale = [r["video_id"] for r in get_connection().execute("select video_id from downloads where status = 'pending'")]
+            stale = pending_ids()
             if stale:
                 st.warning("pending sans processus : " + ", ".join(stale))
                 if st.button("Marquer failed", key="mark_failed"):
@@ -125,7 +124,7 @@ def render_job() -> None:
                     st.rerun()
         return
     running = job["proc"].poll() is None
-    row = get_connection().execute("select status, reason from downloads where video_id = ?", (job["video_id"],)).fetchone()
+    row = job_row(job["video_id"])
     status = row["status"] if row else "inconnu"
     reason = (row["reason"] if row else "") or ""
     if running:
@@ -164,7 +163,7 @@ def _progress(log: str) -> float | None:
 
 def _category_files(cat: str) -> list[tuple[str, Path]]:
     root = Path(settings.base_storage_path).resolve()
-    rows = get_connection().execute("select video_id, file_path from downloads where category = ? and status = 'ok' and file_path is not null", (cat,)).fetchall()
+    rows = ok_files(cat)
     out: list[tuple[str, Path]] = []
     for r in rows:
         p = Path(r["file_path"])
@@ -240,7 +239,7 @@ with tab_search:
             items, stats = find_candidates_ex(s_cat, subj, action, int(limit), s_kind, precision.strip(), free)
         st.session_state["search"] = {"ctx": (s_cat, subj, store_action, s_kind), "items": items, "stats": dict(stats), "limit": int(limit)}
     state = st.session_state.get("search", {"ctx": (s_cat, subject, action, s_kind), "items": [], "stats": {}})
-    _rows = get_connection().execute("select video_id, status, reason from downloads").fetchall()
+    _rows = status_reasons()
     statuses = {r["video_id"]: r["status"] for r in _rows}
     reasons = {r["video_id"]: r["reason"] for r in _rows}
     ctx = state["ctx"]
@@ -282,7 +281,8 @@ with tab_search:
                 download(cand, *ctx, allow_low_fps=need)
 
 with tab_db:
-    raw_rows = [dict(r) for r in get_connection().execute("select * from downloads order by rowid desc")]
+    order = st.selectbox("Tri", ["Plus récents", "Plus anciens"], key="b_order")
+    raw_rows = all_downloads(order == "Plus récents")
     rows = [{k: r.get(k) for k in BASE_COLUMNS} for r in raw_rows]
     labels = sorted({r["status"] for r in rows if r.get("status")})
     pick = st.pills("Statut", labels, selection_mode="multi", default=labels)

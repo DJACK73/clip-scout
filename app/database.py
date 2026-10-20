@@ -88,3 +88,40 @@ def seen_titles(category: str) -> set[str]:
     rows = conn.execute("SELECT title FROM downloads WHERE category = ? AND status IN ('ok', 'pending', 'downloaded', 'excluded_game') AND title IS NOT NULL", (category,)).fetchall()
     conn.close()
     return {norm_title(r[0]) for r in rows} - {""}
+
+def status_counts() -> dict[str, int]:
+    conn = get_connection()
+    rows = conn.execute("SELECT status, COUNT(*) AS n FROM downloads GROUP BY status").fetchall()
+    conn.close()
+    return {r["status"]: r["n"] for r in rows}
+
+def pending_ids() -> list[str]:
+    conn = get_connection()
+    rows = conn.execute("SELECT video_id FROM downloads WHERE status = 'pending'").fetchall()
+    conn.close()
+    return [r["video_id"] for r in rows]
+
+def job_row(video_id: str) -> sqlite3.Row | None:
+    conn = get_connection()
+    row = conn.execute("SELECT status, reason FROM downloads WHERE video_id = ?", (video_id,)).fetchone()
+    conn.close()
+    return row
+
+def ok_files(category: str) -> list[sqlite3.Row]:
+    conn = get_connection()
+    rows = conn.execute("SELECT video_id, file_path FROM downloads WHERE category = ? AND status = 'ok' AND file_path IS NOT NULL", (category,)).fetchall()
+    conn.close()
+    return rows
+
+def status_reasons() -> list[sqlite3.Row]:
+    conn = get_connection()
+    rows = conn.execute("SELECT video_id, status, reason FROM downloads").fetchall()
+    conn.close()
+    return rows
+
+def all_downloads(newest_first: bool = True) -> list[dict]:
+    order = "DESC" if newest_first else "ASC"
+    conn = get_connection()
+    rows = conn.execute(f"SELECT * FROM downloads ORDER BY created_at {order}, rowid {order}").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
