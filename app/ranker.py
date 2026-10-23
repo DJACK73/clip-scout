@@ -45,7 +45,7 @@ def rank(entries: list[dict], category: str, subject: str, action: str, kind: st
     h_hi = rules.get("duration_hard_max_sec") if kind == "raw" else None
     h_lo = rules.get("duration_hard_min_sec") if kind == "raw" else None
     cap = None if kind == "pack" else (h_hi or rules.get("max_duration_sec"))
-    min_dur = h_lo if h_lo is not None else rules.get("min_duration_sec", settings.min_video_duration_sec)
+    min_dur = h_lo if h_lo is not None else rules.get("action_min_duration_sec", {}).get(action, rules.get("min_duration_sec", settings.min_video_duration_sec))
     for e in entries:
         dur = e.get("duration")
         if cap and dur is not None and dur > cap:

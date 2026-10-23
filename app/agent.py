@@ -25,9 +25,10 @@ class Outcome:
     def __bool__(self) -> bool:
         return self.status == "ok"
 
-def _min_duration(category: str) -> int | None:
+def _min_duration(category: str, action: str = "") -> int | None:
     from app.profiler import load_rules
-    return load_rules()["categories"][category].get("min_duration_sec")
+    r = load_rules()["categories"][category]
+    return r.get("action_min_duration_sec", {}).get(action, r.get("min_duration_sec"))
 
 def _thresholds(category: str, kind: str = "raw", action: str = "") -> tuple[float | None, int | None]:
     if kind != "raw":
@@ -82,7 +83,7 @@ def process(candidate: dict[str, Any], category: str, subject: str, action: str,
     try:
         fps_t, kbps_t = _thresholds(category, kind, action)
         confirm = _confirm_fps(category, kind)
-        meta = inspect(candidate["url"], fps_t, kbps_t, min_height=_min_height(category, kind), min_duration=_min_duration(category), max_duration=_max_duration(category, kind), soft=_soft(category, kind), dur_hard=_dur_hard(category, kind))
+        meta = inspect(candidate["url"], fps_t, kbps_t, min_height=_min_height(category, kind), min_duration=_min_duration(category, action), max_duration=_max_duration(category, kind), soft=_soft(category, kind), dur_hard=_dur_hard(category, kind))
     except QualityRejected as e:
         set_meta(vid, e.title or candidate.get("title"), e.channel or candidate.get("channel"))
         update_status(vid, "rejected_inspect", reason=str(e)[:300])

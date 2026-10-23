@@ -271,7 +271,10 @@
         "ambience",
         "transitions",
         "meme_sounds",
-        "cinematic_hits"
+        "cinematic_hits",
+        "music_anime",
+        "music_foot",
+        "music_both"
       ],
       "forced_keywords": [
         "mp3 320kbps",
@@ -286,7 +289,10 @@
         "ambience": [],
         "transitions": [],
         "meme_sounds": [],
-        "cinematic_hits": []
+        "cinematic_hits": [],
+        "music_anime": [],
+        "music_foot": [],
+        "music_both": []
       },
       "min_kbps": 1000,
       "min_height": 0,
@@ -341,6 +347,31 @@
           "impact",
           "boom"
         ]
+      },
+      "subject_optional": [
+        "music_anime",
+        "music_foot",
+        "music_both"
+      ],
+      "subject_examples": {
+        "music_anime": "ex. phonk, lofi — vide = tous genres",
+        "music_foot": "ex. phonk, lofi — vide = tous genres",
+        "music_both": "ex. phonk, lofi — vide = tous genres"
+      },
+      "action_query": {
+        "music_anime": "anime amv song",
+        "music_foot": "football skills song",
+        "music_both": "music"
+      },
+      "sp_modes": {
+        "week": "CAMSBggDEAEYAQ%3D%3D",
+        "month": "CAMSBggEEAEYAQ%3D%3D",
+        "cc": "CAMSBBgBMAE%3D"
+      },
+      "action_min_duration_sec": {
+        "music_anime": 60,
+        "music_foot": 60,
+        "music_both": 60
       }
     }
   },

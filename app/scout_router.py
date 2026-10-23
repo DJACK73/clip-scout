@@ -16,13 +16,15 @@ def _demote(entries: list[dict]) -> list[dict]:
         out.append({**e, "score": e["score"] - NOISE_PENALTY * hits})
     return sorted(out, key=lambda e: e["score"], reverse=True)
 
-def find_candidates_ex(category: str, subject: str, action: str, limit: int = 5, kind: str = "raw", precision: str = "", free: bool = False) -> tuple[list[dict], Counter]:
+def find_candidates_ex(category: str, subject: str, action: str, limit: int = 5, kind: str = "raw", precision: str = "", free: bool = False, sp: str | None = None) -> tuple[list[dict], Counter]:
     from app.search_ytdlp import search_ex
-    raw, stats = search_ex(category, subject, action, limit * 4, kind, cap=limit * 8, precision=precision, free=free)
+    raw, stats = search_ex(category, subject, action, limit * 4, kind, cap=limit * 8, precision=precision, free=free, sp=sp)
     hint = f"{precision} {action}".strip() if free else precision
     ranked = rank(raw, category, subject, action, kind, hint)
     if free or not subject.strip():
         ranked = _demote(ranked)
+    if sp:
+        ranked = sorted(ranked, key=lambda e: -(e.get("view_count") or 0))
     stats["rank_dropped"] = len(raw) - len(ranked)
     seen = seen_titles(category)
     new = 0

@@ -21,7 +21,7 @@ def build_query(category: str, subject: str, action: str, sample_size: int = 3, 
     forced = [] if free else rules.get("action_forced_keywords", {}).get(action, rules["forced_keywords"])
     picked = forced[:sample_size]
     aliases = None if free else rules.get("action_aliases", {}).get(action)
-    term = aliases[0] if aliases else action.replace('_', ' ')
+    term = rules.get("action_query", {}).get(action) or (aliases[0] if aliases else action.replace('_', ' '))
     base = f"{subject} {precision.strip()}".strip()
     head = base if term.lower() == subject.lower() else f"{base} {term}"
     return f"{head} {' '.join(picked)}".strip()

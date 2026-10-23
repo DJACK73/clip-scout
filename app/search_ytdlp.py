@@ -1,7 +1,8 @@
 from collections import Counter
+from urllib.parse import quote_plus
 import yt_dlp
 from app.guard import build_ydl_opts, network_delay
-from app.profiler import build_query, exclusion_reason, classify
+from app.profiler import build_query, exclusion_reason, classify, load_rules
 from app.database import is_duplicate
 from app.logger import log
 from app.ranker import relevant, precision_score
@@ -9,10 +10,15 @@ from app.ranker import relevant, precision_score
 KEYWORD_LEVELS: tuple[int, ...] = (1, 0)
 KIND_TERMS: dict[str, str] = {"raw": "", "pack": "clips for edits", "edit": "edit"}
 
-def _fetch(query: str, count: int) -> list[dict]:
+def _fetch(query: str, count: int, sp: str | None = None) -> list[dict]:
     opts = {**build_ydl_opts(), "extract_flat": True, "skip_download": True}
+    if sp:
+        opts["playlistend"] = count
+        target = f"https://www.youtube.com/results?search_query={quote_plus(query)}&sp={sp}"
+    else:
+        target = f"ytsearch{count}:{query}"
     with yt_dlp.YoutubeDL(opts) as ydl:
-        info = ydl.extract_info(f"ytsearch{count}:{query}", download=False)
+        info = ydl.extract_info(target, download=False)
     return (info or {}).get("entries") or []
 
 def _candidate(entry: dict) -> dict:
@@ -23,11 +29,12 @@ def _candidate(entry: dict) -> dict:
         "title": entry.get("title") or "",
         "channel": entry.get("channel"),
         "duration": entry.get("duration"),
+        "view_count": entry.get("view_count"),
         "start_sec": None,
         "end_sec": None,
     }
 
-def _triage(raw: list[dict], category: str, subject: str, action: str, kind: str) -> tuple[list[dict], Counter]:
+def _triage(raw: list[dict], category: str, subject: str, action: str, kind: str, music: bool = False) -> tuple[list[dict], Counter]:
     stats: Counter = Counter()
     kept: list[dict] = []
     for entry in raw:
@@ -44,7 +51,11 @@ def _triage(raw: list[dict], category: str, subject: str, action: str, kind: str
         if not ok:
             stats["not_relevant"] += 1
             continue
-        if classify(title) != kind:
+        if music:
+            if entry.get("duration") is None or len(video_id) != 11:
+                stats["music_invalid"] += 1
+                continue
+        elif classify(title) != kind:
             stats["wrong_kind"] += 1
             continue
         cand = _candidate(entry)
@@ -55,15 +66,16 @@ def _triage(raw: list[dict], category: str, subject: str, action: str, kind: str
         kept.append(cand)
     return kept, stats
 
-def search_ex(category: str, subject: str, action: str, limit: int = 10, kind: str = "raw", cap: int | None = None, precision: str = "", free: bool = False) -> tuple[list[dict], Counter]:
+def search_ex(category: str, subject: str, action: str, limit: int = 10, kind: str = "raw", cap: int | None = None, precision: str = "", free: bool = False, sp: str | None = None) -> tuple[list[dict], Counter]:
+    music = action in load_rules()["categories"].get(category, {}).get("action_query", {})
     total: Counter = Counter()
     carry: list[dict] = []
-    for i, level in enumerate(KEYWORD_LEVELS if kind == "raw" and not free else (0,)):
+    for i, level in enumerate(KEYWORD_LEVELS if kind == "raw" and not free and not sp else (0,)):
         if i:
             network_delay()
         query = build_query(category, subject, action, level, precision, free) if kind == "raw" else " ".join(p for p in (subject, precision.strip(), KIND_TERMS[kind]) if p)
-        raw = _fetch(query, limit * 3)
-        kept, stats = _triage(raw, category, subject, action, kind)
+        raw = _fetch(query, limit * 3, sp)
+        kept, stats = _triage(raw, category, subject, action, kind, music)
         if precision.strip():
             kept.sort(key=lambda c: -precision_score(c["title"], precision))
         total.update(stats)
