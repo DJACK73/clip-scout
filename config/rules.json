@@ -361,7 +361,7 @@
       "action_query": {
         "music_anime": "anime amv song",
         "music_foot": "football skills song",
-        "music_both": "music"
+        "music_both": "anime football music"
       },
       "sp_modes": {
         "week": "CAMSBggDEAEYAQ%3D%3D",
@@ -372,7 +372,8 @@
         "music_anime": 60,
         "music_foot": 60,
         "music_both": 60
-      }
+      },
+      "cc_suffix": "no copyright"
     }
   },
   "excluded_keywords": [

@@ -23,7 +23,10 @@ def find_candidates_ex(category: str, subject: str, action: str, limit: int = 5,
     ranked = rank(raw, category, subject, action, kind, hint)
     if free or not subject.strip():
         ranked = _demote(ranked)
-    if sp:
+    if sp == "CAI%3D":
+        pos = {e["video_id"]: i for i, e in enumerate(raw)}
+        ranked = sorted(ranked, key=lambda e: pos.get(e["video_id"], 10**6))
+    elif sp:
         ranked = sorted(ranked, key=lambda e: -(e.get("view_count") or 0))
     stats["rank_dropped"] = len(raw) - len(ranked)
     seen = seen_titles(category)

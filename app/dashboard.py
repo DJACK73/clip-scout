@@ -17,6 +17,7 @@ KINDS: list[str] = ["raw", "pack", "edit"]
 BASE_COLUMNS: list[str] = ["video_id", "status", "reason", "title", "category", "kind", "subject", "action", "fps", "bitrate", "channel", "file_path", "created_at"]
 ACTIONS: dict[str, list[str]] = {k: v["actions"] for k, v in load_rules()["categories"].items()}
 OTHER_ACTION: str = "✏️ Autre…"
+SP_RECENT: str = "CAI%3D"
 
 init_db()
 st.set_page_config(page_title="clip-scout", layout="wide")
@@ -24,7 +25,13 @@ def _counts() -> dict[str, int]:
     return status_counts()
 
 st.markdown("<style>[data-testid='stAppDeployButton']{display:none}</style>", unsafe_allow_html=True)
-st.title("🎬 clip-scout")
+def _open_folder() -> None:
+    win = subprocess.run(["wslpath", "-w", str(settings.base_storage_path)], capture_output=True, text=True).stdout.strip()
+    subprocess.Popen(["explorer.exe", win])
+
+_h1, _h2 = st.columns([7, 3], vertical_alignment="bottom")
+_h1.title("🎬 clip-scout")
+_h2.button("📂 Ouvrir le dossier des téléchargements", on_click=_open_folder, width="stretch")
 st.caption("Sourcing de rushs bruts · yt-dlp + FFprobe")
 with st.expander("ℹ️ Guide", expanded=False):
     st.caption("**Étapes** : Chercher → Choisir → Télécharger. Un clip déjà téléchargé ou déjà rejeté n'est jamais retéléchargé (badge « doublon » / « rejeté »).")
@@ -32,7 +39,8 @@ with st.expander("ℹ️ Guide", expanded=False):
     st.caption("**Précision** : mot libre ajouté à la requête (ex. un millésime ou deux noms de personnages).")
     st.caption("**Action** : le type de scène cherché, envoyé tel quel à YouTube. `✏️ Autre…` = action libre.")
     st.caption("**Type raw** : scène brute, sources natives. **pack** : clips pour edits / scenepacks. **edit** : AMV et edits déjà montés. En pack et en edit, l'action est ignorée : seuls Sujet et Précision comptent.")
-    st.caption("**Autorisation** : fps, bitrate ou hauteur sous le seuil de la catégorie demandent une confirmation avant téléchargement. Durée au-dessus du plafond (anime/audio 600 s, foot 720 s) : écartée.")
+    st.caption("**Autorisation** : fps, bitrate ou hauteur sous le seuil de la catégorie demandent une confirmation avant téléchargement. Durée : anime 60-800 s (de 5 à 1200 s avec autorisation), foot jusqu'à 720 s, audio jusqu'à 600 s (musique : 60 s minimum) ; au-delà, écartée.")
+    st.caption("**Tri** : « Plus récentes » classe par date (l'ordre inverse n'existe pas sur YouTube). Musique : Tendance semaine/mois = les plus vues, Sans copyright = case Creative Commons de l'uploadeur, pas une garantie de licence. Destinations : music_anime, music_foot, music_both (croisement anime × foot).")
 _c = _counts()
 m1, m2, m3, m4, m5 = st.columns(5)
 m1.metric("Téléchargés", _c.get("ok", 0), border=True)
@@ -41,11 +49,6 @@ m3.metric("Échecs", _c.get("failed", 0), border=True)
 m4.metric("Supprimés", _c.get("purged", 0), border=True)
 m5.metric("Disque libre", f"{free_disk_gb():.0f} Go", border=True)
 
-def _open_folder() -> None:
-    win = subprocess.run(["wslpath", "-w", str(settings.base_storage_path)], capture_output=True, text=True).stdout.strip()
-    subprocess.Popen(["explorer.exe", win])
-
-st.button("📂 Ouvrir le dossier des téléchargements", on_click=_open_folder)
 panel = st.container()
 tab_search, tab_url, tab_db = st.tabs(["🔍 Recherche", "🔗 URL directe", "🗄️ Base"])
 
@@ -214,11 +217,17 @@ def _fmt_dur(d: float | None) -> str:
     m, sec = divmod(int(d), 60)
     return f"{m}:{sec:02d}"
 
+def _fmt_views(v: int | None) -> str:
+    if not v:
+        return ""
+    return f" · {v / 1e6:.1f} M vues" if v >= 1_000_000 else f" · {v / 1e3:.0f} k vues" if v >= 1000 else f" · {v} vues"
+
 with tab_url:
     url = st.text_input("URL")
     st.caption("URL directe : exclusions de mots-clés ignorées, seuils fps/kbps/hauteur appliqués au type raw.")
-    cat = st.selectbox("Catégorie", CATEGORIES, key="u_cat", format_func=CAT_LABELS.get)
-    kind = st.selectbox("Type", KINDS, key="u_kind")
+    u1, u2 = st.columns(2)
+    cat = u1.selectbox("Catégorie", CATEGORIES, key="u_cat", format_func=CAT_LABELS.get)
+    kind = u2.selectbox("Type", KINDS, key="u_kind")
     if st.button("Télécharger", key="u_go", disabled=busy()) and url:
         try:
             vid = video_id(url)
@@ -239,6 +248,15 @@ with tab_search:
     limit = d4.number_input("Limite", 1, 20, 5)
     _frules = load_rules()["categories"][s_cat]
     _opt = (not free) and s_kind == "raw" and choice in _frules.get("subject_optional", [])
+    _sp_modes = _frules.get("sp_modes", {})
+    _music = (not free) and choice in _frules.get("action_query", {})
+    _sort_opts = ["Standard", "Tendance semaine", "Tendance mois", "Sans copyright", "Plus récentes"] if _music else ["Pertinence", "Plus récentes"]
+    _sort_key = {"Tendance semaine": "week", "Tendance mois": "month", "Sans copyright": "cc", "Plus récentes": "recent"}
+    sort_label = st.segmented_control("Tri", _sort_opts, default=_sort_opts[0], key="s_sort_m" if _music else "s_sort_v") or _sort_opts[0]
+    _mode = _sort_key.get(sort_label)
+    sp = SP_RECENT if _mode == "recent" else (_sp_modes.get(_mode) if _mode else None)
+    if _mode == "cc":
+        st.caption("Filtre Creative Commons de l'uploadeur : pas une garantie de licence.")
     _hint = ""
     subject = c2.text_input("Sujet" + (" (optionnel)" if _opt else ""), key="s_subject", placeholder=_hint)
     subj = subject.strip()
@@ -246,15 +264,18 @@ with tab_search:
     store_action = slug(action) if free else action
     if st.button("Chercher", type="primary", disabled=not ((subj or _opt) and action)):
         with st.spinner("Recherche en cours…"):
-            items, stats = find_candidates_ex(s_cat, subj, action, int(limit), s_kind, precision.strip(), free)
-        st.session_state["search"] = {"ctx": (s_cat, subj or "multi", store_action, s_kind), "items": items, "stats": dict(stats), "limit": int(limit)}
+            _prec = precision.strip()
+            if _mode == "cc":
+                _prec = f"{_prec} {_frules.get('cc_suffix', 'no copyright')}".strip()
+            items, stats = find_candidates_ex(s_cat, subj, action, int(limit), s_kind, _prec, free, sp)
+        st.session_state["search"] = {"ctx": (s_cat, subj or "multi", store_action, s_kind), "items": items, "stats": dict(stats), "limit": int(limit), "sort": sort_label}
     state = st.session_state.get("search", {"ctx": (s_cat, subject, action, s_kind), "items": [], "stats": {}})
     _rows = status_reasons()
     statuses = {r["video_id"]: r["status"] for r in _rows}
     reasons = {r["video_id"]: r["reason"] for r in _rows}
     ctx = state["ctx"]
     if state["stats"]:
-        st.markdown(f"**{len(state['items'])}** affichés · limite {state.get('limit', '?')}")
+        st.markdown(f"**{len(state['items'])}** affichés · limite {state.get('limit', '?')} · tri {state.get('sort', '—')}")
         _s = state["stats"]
         _d, _r, _f = _s.get("shown_duplicates", 0), _s.get("shown_rejected", 0), _s.get("refilled", 0)
         st.caption(f"{len(state['items']) - _d - _r - _f} neufs · {_f} complétés · {_d} doublons · {_r} rejetés")
@@ -275,7 +296,7 @@ with tab_search:
             img, body, act = st.columns([2, 6, 2], vertical_alignment="center")
             img.image(f"https://i.ytimg.com/vi/{vid}/mqdefault.jpg", width=170)
             body.markdown(f"**{cand['title']}**")
-            body.caption(f"{_fmt_dur(cand.get('duration'))} · {cand.get('channel')} · score {cand.get('score', '?')} · `{vid}`")
+            body.caption(f"{_fmt_dur(cand.get('duration'))}{_fmt_views(cand.get('view_count'))} · {cand.get('channel')} · score {cand.get('score', '?')} · `{vid}`")
             if dup:
                 body.markdown(":orange-badge[doublon]" + (f" :gray-badge[{status}]" if status else " :gray-badge[titre déjà vu]"))
             elif rej:
