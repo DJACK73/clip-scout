@@ -373,7 +373,11 @@
         "music_foot": 60,
         "music_both": 60
       },
-      "cc_suffix": "no copyright"
+      "cc_query": {
+        "music_anime": "no copyright phonk",
+        "music_foot": "no copyright sport music",
+        "music_both": "no copyright music"
+      }
     }
   },
   "excluded_keywords": [

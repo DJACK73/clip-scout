@@ -40,7 +40,7 @@ with st.expander("ℹ️ Guide", expanded=False):
     st.caption("**Action** : le type de scène cherché, envoyé tel quel à YouTube. `✏️ Autre…` = action libre.")
     st.caption("**Type raw** : scène brute, sources natives. **pack** : clips pour edits / scenepacks. **edit** : AMV et edits déjà montés. En pack et en edit, l'action est ignorée : seuls Sujet et Précision comptent.")
     st.caption("**Autorisation** : fps, bitrate ou hauteur sous le seuil de la catégorie demandent une confirmation avant téléchargement. Durée : anime 60-800 s (de 5 à 1200 s avec autorisation), foot jusqu'à 720 s, audio jusqu'à 600 s (musique : 60 s minimum) ; au-delà, écartée.")
-    st.caption("**Tri** : « Plus récentes » classe par date (l'ordre inverse n'existe pas sur YouTube). Musique : Tendance semaine/mois = les plus vues, Sans copyright = case Creative Commons de l'uploadeur, pas une garantie de licence. Destinations : music_anime, music_foot, music_both (croisement anime × foot).")
+    st.caption("**Période** (foot, anime) : filtre YouTube « cette semaine » / « ce mois », classement par pertinence ; pas de tri par date ni de tri ascendant (pour une vidéo ancienne, mets un millésime en Précision). **Tri** (musique) : Tendance semaine/mois = les plus vues, Sans copyright = case Creative Commons de l'uploadeur, pas une garantie de licence. Destinations : music_anime, music_foot, music_both (croisement anime × foot) ; en Sans copyright, requêtes de remplacement (phonk / sport / générique) car la musique libre n'est pas spécifique à l'anime.")
 _c = _counts()
 m1, m2, m3, m4, m5 = st.columns(5)
 m1.metric("Téléchargés", _c.get("ok", 0), border=True)
@@ -250,11 +250,15 @@ with tab_search:
     _opt = (not free) and s_kind == "raw" and choice in _frules.get("subject_optional", [])
     _sp_modes = _frules.get("sp_modes", {})
     _music = (not free) and choice in _frules.get("action_query", {})
-    _sort_opts = ["Standard", "Tendance semaine", "Tendance mois", "Sans copyright", "Plus récentes"] if _music else ["Pertinence", "Plus récentes"]
+    _sort_opts = ["Standard", "Tendance semaine", "Tendance mois", "Sans copyright"] if _music else ["Pertinence"]
     _sort_key = {"Tendance semaine": "week", "Tendance mois": "month", "Sans copyright": "cc", "Plus récentes": "recent"}
-    sort_label = st.segmented_control("Tri", _sort_opts, default=_sort_opts[0], key="s_sort_m" if _music else "s_sort_v") or _sort_opts[0]
+    _periods = {"Tout": None, "Cette semaine": "EgIIAw%3D%3D", "Ce mois": "EgIIBA%3D%3D"}
+    if _music:
+        sort_label = st.segmented_control("Tri", _sort_opts, default=_sort_opts[0], key="s_sort_m") or _sort_opts[0]
+    else:
+        sort_label = st.segmented_control("Période", list(_periods), default="Tout", key="s_period") or "Tout"
     _mode = _sort_key.get(sort_label)
-    sp = SP_RECENT if _mode == "recent" else (_sp_modes.get(_mode) if _mode else None)
+    sp = (_sp_modes.get(_mode) if _mode else None) if _music else _periods[sort_label]
     if _mode == "cc":
         st.caption("Filtre Creative Commons de l'uploadeur : pas une garantie de licence.")
     _hint = ""
@@ -264,10 +268,7 @@ with tab_search:
     store_action = slug(action) if free else action
     if st.button("Chercher", type="primary", disabled=not ((subj or _opt) and action)):
         with st.spinner("Recherche en cours…"):
-            _prec = precision.strip()
-            if _mode == "cc":
-                _prec = f"{_prec} {_frules.get('cc_suffix', 'no copyright')}".strip()
-            items, stats = find_candidates_ex(s_cat, subj, action, int(limit), s_kind, _prec, free, sp)
+            items, stats = find_candidates_ex(s_cat, subj, action, int(limit), s_kind, precision.strip(), free, sp)
         st.session_state["search"] = {"ctx": (s_cat, subj or "multi", store_action, s_kind), "items": items, "stats": dict(stats), "limit": int(limit), "sort": sort_label}
     state = st.session_state.get("search", {"ctx": (s_cat, subject, action, s_kind), "items": [], "stats": {}})
     _rows = status_reasons()

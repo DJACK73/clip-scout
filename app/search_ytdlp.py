@@ -40,7 +40,7 @@ def _triage(raw: list[dict], category: str, subject: str, action: str, kind: str
     for entry in raw:
         video_id = entry.get("id")
         title = entry.get("title") or ""
-        if not video_id:
+        if not video_id or len(video_id) != 11:
             stats["no_id"] += 1
             continue
         reason = exclusion_reason(title)
@@ -74,6 +74,9 @@ def search_ex(category: str, subject: str, action: str, limit: int = 10, kind: s
         if i:
             network_delay()
         query = build_query(category, subject, action, level, precision, free) if kind == "raw" else " ".join(p for p in (subject, precision.strip(), KIND_TERMS[kind]) if p)
+        cc_rules = load_rules()["categories"].get(category, {})
+        if sp and sp == cc_rules.get("sp_modes", {}).get("cc") and cc_rules.get("cc_query", {}).get(action):
+            query = " ".join(p for p in (subject, precision.strip(), cc_rules["cc_query"][action]) if p)
         raw = _fetch(query, limit * 3, sp)
         kept, stats = _triage(raw, category, subject, action, kind, music)
         if precision.strip():
