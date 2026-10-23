@@ -26,6 +26,13 @@ def _counts() -> dict[str, int]:
 st.markdown("<style>[data-testid='stAppDeployButton']{display:none}</style>", unsafe_allow_html=True)
 st.title("🎬 clip-scout")
 st.caption("Sourcing de rushs bruts · yt-dlp + FFprobe")
+with st.expander("ℹ️ Guide", expanded=False):
+    st.caption("**Étapes** : Chercher → Choisir → Télécharger. Un clip déjà téléchargé ou déjà rejeté n'est jamais retéléchargé (badge « doublon » / « rejeté »).")
+    st.caption("**Sujet** : titre d'anime, joueur ou genre. Peut rester vide pour foot (strength_duels, best_moments, crazy_moments) et anime (fights_aura, rage_screams, sad_backstory) : recherche sur tous les sujets, rangement dans le dossier `multi`.")
+    st.caption("**Précision** : mot libre ajouté à la requête (ex. un millésime ou deux noms de personnages).")
+    st.caption("**Action** : le type de scène cherché, envoyé tel quel à YouTube. `✏️ Autre…` = action libre.")
+    st.caption("**Type raw** : scène brute, sources natives. **pack** : clips pour edits / scenepacks. **edit** : AMV et edits déjà montés. En pack et en edit, l'action est ignorée : seuls Sujet et Précision comptent.")
+    st.caption("**Autorisation** : fps, bitrate ou hauteur sous le seuil de la catégorie demandent une confirmation avant téléchargement. Durée au-dessus du plafond (anime/audio 600 s, foot 720 s) : écartée.")
 _c = _counts()
 m1, m2, m3, m4, m5 = st.columns(5)
 m1.metric("Téléchargés", _c.get("ok", 0), border=True)
@@ -232,7 +239,7 @@ with tab_search:
     limit = d4.number_input("Limite", 1, 20, 5)
     _frules = load_rules()["categories"][s_cat]
     _opt = (not free) and s_kind == "raw" and choice in _frules.get("subject_optional", [])
-    _hint = "" if free else _frules.get("subject_examples", {}).get(choice, "")
+    _hint = ""
     subject = c2.text_input("Sujet" + (" (optionnel)" if _opt else ""), key="s_subject", placeholder=_hint)
     subj = subject.strip()
     action = custom.strip() if free else choice
