@@ -187,6 +187,7 @@
           "badass moment"
         ],
         "rage_screams": [
+          "rage scream scene",
           "rage scene",
           "rage",
           "scream",
@@ -194,8 +195,8 @@
           "angry"
         ],
         "sad_backstory": [
-          "sad backstory",
           "sad scene",
+          "sad backstory",
           "backstory",
           "sad moments"
         ],
@@ -240,6 +241,22 @@
           "romantic",
           "confession"
         ]
+      },
+      "subject_optional": [
+        "fights_aura",
+        "rage_screams",
+        "sad_backstory"
+      ],
+      "subject_examples": {
+        "fights_aura": "ex. solo leveling, jujutsu kaisen — vide = tous animes",
+        "rage_screams": "ex. solo leveling, jujutsu kaisen — vide = tous animes",
+        "sad_backstory": "ex. solo leveling, jujutsu kaisen — vide = tous animes"
+      },
+      "empty_subject_term": "anime",
+      "action_forced_keywords": {
+        "fights_aura": [],
+        "rage_screams": [],
+        "sad_backstory": []
       }
     },
     "audio": {
