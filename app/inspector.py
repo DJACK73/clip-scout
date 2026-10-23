@@ -28,16 +28,25 @@ def best_video_format(info: dict[str, Any]) -> dict[str, Any]:
         return 2 if v.startswith("avc1") else 1 if v.startswith("vp9") else 0
     return max(fmts, key=lambda f: (f["height"], f.get("fps") or 0, codec_rank(f), f.get("tbr") or 0))
 
-def _evaluate(info: dict[str, Any], min_fps: float | None = None, min_kbps: int | None = None, min_height: int | None = None, min_duration: int | None = None, max_duration: int | None = None, soft: set[str] | None = None) -> dict[str, Any]:
+def _evaluate(info: dict[str, Any], min_fps: float | None = None, min_kbps: int | None = None, min_height: int | None = None, min_duration: int | None = None, max_duration: int | None = None, soft: set[str] | None = None, dur_hard: tuple[int | None, int | None] | None = None) -> dict[str, Any]:
     if info.get("live_status") in {"is_live", "is_upcoming"}:
         raise QualityRejected("live/upcoming")
     dur = int(info.get("duration") or 0)
     cap = settings.max_video_duration_sec if max_duration is None else min(max_duration, settings.max_video_duration_sec)
-    if not (settings.min_video_duration_sec if min_duration is None else min_duration) <= dur <= cap:
-        raise QualityRejected(f"durée {dur}s hors bornes")
+    lo = settings.min_video_duration_sec if min_duration is None else min_duration
+    dur_msg = None
+    if not lo <= dur <= cap:
+        h_lo, h_hi = dur_hard or (None, None)
+        hard_lo = lo if h_lo is None else min(lo, h_lo)
+        hard_hi = cap if h_hi is None else min(max(cap, h_hi), settings.max_video_duration_sec)
+        if not hard_lo <= dur <= hard_hi:
+            raise QualityRejected(f"durée {dur}s hors bornes")
+        dur_msg = f"durée {dur}s hors {lo}-{cap}s"
     fmt = best_video_format(info)
     sf = soft or set()
     issues: list[str] = []
+    if dur_msg:
+        issues.append(dur_msg)
     def flag(kind: str, msg: str) -> None:
         if kind not in sf:
             raise QualityRejected(msg)
@@ -65,10 +74,10 @@ def _evaluate(info: dict[str, Any], min_fps: float | None = None, min_kbps: int 
         "issues": issues,
     }
 
-def inspect(url: str, min_fps: float | None = None, min_kbps: int | None = None, min_height: int | None = None, min_duration: int | None = None, max_duration: int | None = None, soft: set[str] | None = None) -> dict[str, Any]:
+def inspect(url: str, min_fps: float | None = None, min_kbps: int | None = None, min_height: int | None = None, min_duration: int | None = None, max_duration: int | None = None, soft: set[str] | None = None, dur_hard: tuple[int | None, int | None] | None = None) -> dict[str, Any]:
     info = fetch_info(url)
     try:
-        return _evaluate(info, min_fps, min_kbps, min_height, min_duration, max_duration, soft)
+        return _evaluate(info, min_fps, min_kbps, min_height, min_duration, max_duration, soft, dur_hard)
     except QualityRejected as e:
         e.title = info.get("title")
         e.channel = info.get("channel") or info.get("uploader")

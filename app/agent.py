@@ -49,6 +49,13 @@ def _max_duration(category: str, kind: str = "raw") -> int | None:
     r = json.loads((ROOT / "config" / "rules.json").read_text(encoding="utf-8"))["categories"][category]
     return r.get("max_duration_sec")
 
+def _dur_hard(category: str, kind: str = "raw") -> tuple[int | None, int | None] | None:
+    if kind != "raw":
+        return None
+    r = json.loads((ROOT / "config" / "rules.json").read_text(encoding="utf-8"))["categories"][category]
+    lo, hi = r.get("duration_hard_min_sec"), r.get("duration_hard_max_sec")
+    return (lo, hi) if lo is not None or hi is not None else None
+
 def _confirm_fps(category: str, kind: str = "raw") -> float | None:
     if kind != "raw":
         return None
@@ -75,7 +82,7 @@ def process(candidate: dict[str, Any], category: str, subject: str, action: str,
     try:
         fps_t, kbps_t = _thresholds(category, kind, action)
         confirm = _confirm_fps(category, kind)
-        meta = inspect(candidate["url"], fps_t, kbps_t, min_height=_min_height(category, kind), min_duration=_min_duration(category), max_duration=_max_duration(category, kind), soft=_soft(category, kind))
+        meta = inspect(candidate["url"], fps_t, kbps_t, min_height=_min_height(category, kind), min_duration=_min_duration(category), max_duration=_max_duration(category, kind), soft=_soft(category, kind), dur_hard=_dur_hard(category, kind))
     except QualityRejected as e:
         set_meta(vid, e.title or candidate.get("title"), e.channel or candidate.get("channel"))
         update_status(vid, "rejected_inspect", reason=str(e)[:300])
