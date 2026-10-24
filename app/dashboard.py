@@ -29,11 +29,33 @@ def _open_folder() -> None:
     win = subprocess.run(["wslpath", "-w", str(settings.base_storage_path)], capture_output=True, text=True).stdout.strip()
     subprocess.Popen(["explorer.exe", win])
 
-_h1, _h2 = st.columns([7, 3], vertical_alignment="bottom")
-_h1.title("🎬 clip-scout")
-_h2.button("📂 Ouvrir le dossier des téléchargements", on_click=_open_folder, width="stretch")
-st.caption("Sourcing de rushs bruts · yt-dlp + FFprobe")
-with st.expander("ℹ️ Guide", expanded=False):
+def _pill(sel: str, color: str) -> str:
+    return (
+        f"{sel} button{{background:#0e1117;border:1px solid {color}80;color:{color};border-radius:12px;min-height:2.2rem;font-weight:600}}"
+        f"{sel} button:hover{{border-color:{color}}}"
+        f"{sel} button p{{color:inherit;font-size:.9rem}}"
+    )
+
+
+st.markdown(
+    "<style>"
+    "[data-testid='stMainBlockContainer']{padding-top:1.6rem}"
+    "[data-testid='stMetric']{padding:.35rem .8rem}"
+    "[data-testid='stMetricValue']{font-size:1.4rem}"
+    "[data-testid='stMetricLabel'] p{font-size:.75rem}"
+    "[data-testid='stPopoverBody']{min-width:min(900px,92vw);max-width:92vw}"
+    + _pill(".st-key-pop_guide", "#0ea5e9")
+    + _pill(".st-key-pop_actions", "#f59e0b")
+    + _pill(".st-key-open_dir", "#14b8a6")
+    + "</style>",
+    unsafe_allow_html=True,
+)
+_t, _g, _a, _o = st.columns([4, 1.3, 1.5, 2.2], vertical_alignment="center")
+_t.markdown("#### 🎬 clip-scout\n<small>Sourcing de rushs bruts · yt-dlp + FFprobe</small>", unsafe_allow_html=True)
+_pg = _g.popover("ℹ️ Guide", key="pop_guide", width="stretch")
+_pa = _a.popover("📖 Actions", key="pop_actions", width="stretch")
+_o.button("📂 Ouvrir le dossier", key="open_dir", on_click=_open_folder, width="stretch")
+with _pg:
     st.caption("**Étapes** : Chercher → Choisir → Télécharger. Un clip déjà téléchargé ou déjà rejeté n'est jamais retéléchargé (badge « doublon » / « rejeté »).")
     st.caption("**Sujet** : titre d'anime, joueur ou genre. Peut rester vide pour foot (strength_duels, best_moments, crazy_moments) et anime (fights_aura, rage_screams, sad_backstory) : recherche sur tous les sujets, rangement dans le dossier `multi`.")
     st.caption("**Précision** : mot libre ajouté à la requête (ex. un millésime ou deux noms de personnages).")
@@ -68,7 +90,7 @@ _ACTION_HELP: dict[str, dict[str, str]] = {
         "music_foot": "musique pour foot", "music_both": "musique pour anime et foot",
     },
 }
-with st.expander("📖 Actions et vocabulaire", expanded=False):
+with _pa:
     for _col, _cat in zip(st.columns(3), CATEGORIES):
         _col.markdown(
             f"**{CAT_LABELS[_cat]}**\n\n"
@@ -262,19 +284,6 @@ def _fmt_views(v: int | None) -> str:
         return ""
     return f" · {v / 1e6:.1f} M vues" if v >= 1_000_000 else f" · {v / 1e3:.0f} k vues" if v >= 1000 else f" · {v} vues"
 
-with tab_url:
-    url = st.text_input("URL")
-    st.caption("URL directe : exclusions de mots-clés ignorées, seuils fps/kbps/hauteur appliqués au type raw.")
-    u1, u2 = st.columns(2)
-    cat = u1.selectbox("Catégorie", CATEGORIES, key="u_cat", format_func=CAT_LABELS.get)
-    kind = u2.selectbox("Type", KINDS, key="u_kind")
-    if st.button("Télécharger", key="u_go", disabled=busy()) and url:
-        try:
-            vid = video_id(url)
-            download({"video_id": vid, "url": f"https://www.youtube.com/watch?v={vid}"}, cat, "manual", "manual", kind)
-        except SystemExit as exc:
-            st.error(str(exc))
-
 _CAT_COLORS: dict[str, str] = {"foot": "#16a34a", "anime": "#e11d48", "audio": "#7c3aed"}
 _KIND_COLORS: dict[str, str] = {"raw": "#2563eb", "pack": "#d97706", "edit": "#db2777"}
 
@@ -299,6 +308,32 @@ def _pick(col, key: str, label: str, value: str, skey: str) -> None:
     )
 
 
+with tab_url:
+    url = st.text_input("URL")
+    st.caption("URL directe : exclusions de mots-clés ignorées, seuils fps/kbps/hauteur appliqués au type raw.")
+    st.session_state.setdefault("u_cat", "foot")
+    st.session_state.setdefault("u_kind", "raw")
+    _uc = st.columns([1, 1, 1, 0.3, 1, 1, 1, 2.7])
+    for _c, _k in zip(_uc[:3], CATEGORIES):
+        _pick(_c, f"ucat_{_k}", CAT_LABELS[_k], _k, "u_cat")
+    for _c, _k in zip(_uc[4:7], KINDS):
+        _pick(_c, f"uknd_{_k}", _k, _k, "u_kind")
+    cat = st.session_state["u_cat"]
+    kind = st.session_state["u_kind"]
+    st.markdown(
+        "<style>"
+        + "".join(_btn_css(f".st-key-ucat_{k}", _CAT_COLORS[k]) for k in CATEGORIES)
+        + "".join(_btn_css(f".st-key-uknd_{k}", _KIND_COLORS[k]) for k in KINDS)
+        + "</style>",
+        unsafe_allow_html=True,
+    )
+    if st.button("Télécharger", key="u_go", disabled=busy()) and url:
+        try:
+            vid = video_id(url)
+            download({"video_id": vid, "url": f"https://www.youtube.com/watch?v={vid}"}, cat, "manual", "manual", kind)
+        except SystemExit as exc:
+            st.error(str(exc))
+
 with tab_search:
     step_slot = st.empty()
     st.session_state.setdefault("s_cat", "foot")
@@ -320,7 +355,7 @@ with tab_search:
         + "</style>",
         unsafe_allow_html=True,
     )
-    c2, c3, d1, d2, d4 = st.columns([3, 3, 3, 3, 2])
+    c2, c3, d1, d2, d4, _pad = st.columns([2, 2, 2, 2, 1, 3])
     precision = c3.text_input("Précision (optionnel)")
     choice = d1.selectbox("Action", _acts, key="s_action")
     free = choice == OTHER_ACTION
@@ -393,7 +428,7 @@ with tab_search:
                 download(cand, *ctx, allow_low_fps=need)
 
 with tab_db:
-    order = st.selectbox("Tri", ["Plus récents", "Plus anciens"], key="b_order")
+    order = st.segmented_control("Tri", ["Plus récents", "Plus anciens"], default="Plus récents", key="b_order") or "Plus récents"
     raw_rows = all_downloads(order == "Plus récents")
     rows = [{k: r.get(k) for k in BASE_COLUMNS} for r in raw_rows]
     labels = sorted({r["status"] for r in rows if r.get("status")})

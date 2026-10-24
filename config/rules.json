@@ -131,6 +131,21 @@
         ]
       },
       "subject_optional": [
+        "freekicks",
+        "penalties",
+        "celebrations",
+        "long_shots",
+        "dribbles_skills",
+        "assists",
+        "general_comps",
+        "tiki_taka",
+        "bicycle_kicks",
+        "saves",
+        "tackles",
+        "headers",
+        "counter_attacks",
+        "hattricks",
+        "one_vs_one",
         "strength_duels",
         "best_moments",
         "crazy_moments"
