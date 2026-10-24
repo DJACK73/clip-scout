@@ -27,7 +27,7 @@ def _opts(selector: str, out_dir: Path, retries: int = 3, name: str = "") -> dic
         "extractor_retries": 2,
     }
 
-def download(meta: dict[str, Any], category: str, kind: str = "raw", subject: str = "manual", action: str = "manual") -> Path:
+def download(meta: dict[str, Any], category: str, kind: str = "raw", subject: str = "manual", action: str = "manual", audio_only: bool = False) -> Path:
     check_disk()
     parts = [slug(subject), slug(action)]
     if parts == ["manual", "manual"]:
@@ -36,7 +36,7 @@ def download(meta: dict[str, Any], category: str, kind: str = "raw", subject: st
     name = slug(meta.get("title") or meta["video_id"])
     out_dir.mkdir(parents=True, exist_ok=True)
     last: Exception = DownloadFailed("aucun sélecteur")
-    for i, sel in enumerate(_selectors(meta["format_id"])):
+    for i, sel in enumerate(["bestaudio[ext=m4a]/bestaudio"] if audio_only else _selectors(meta["format_id"])):
         try:
             with yt_dlp.YoutubeDL(_opts(sel, out_dir, 1 if i == 0 else 3, name)) as ydl:
                 info = ydl.extract_info(meta["url"], download=True)

@@ -72,7 +72,7 @@ def _soft(category: str, kind: str = "raw") -> set[str]:
 def _is_bot_check(err: Exception) -> bool:
     return BOT_MARKER in str(err) or "confirm you're not a bot" in str(err)
 
-def process(candidate: dict[str, Any], category: str, subject: str, action: str, kind: str = "raw", allow_low_fps: bool = False) -> Outcome:
+def process(candidate: dict[str, Any], category: str, subject: str, action: str, kind: str = "raw", allow_low_fps: bool = False, audio_only: bool = False) -> Outcome:
     vid = candidate["video_id"]
     subject = subject.strip().lower()
     action = action.strip().lower()
@@ -83,7 +83,9 @@ def process(candidate: dict[str, Any], category: str, subject: str, action: str,
     try:
         fps_t, kbps_t = _thresholds(category, kind, action)
         confirm = _confirm_fps(category, kind)
-        meta = inspect(candidate["url"], fps_t, kbps_t, min_height=_min_height(category, kind), min_duration=_min_duration(category, action), max_duration=_max_duration(category, kind), soft=_soft(category, kind), dur_hard=_dur_hard(category, kind))
+        if audio_only:
+            fps_t, kbps_t, confirm = 0, 0, None
+        meta = inspect(candidate["url"], fps_t, kbps_t, min_height=0 if audio_only else _min_height(category, kind), min_duration=_min_duration(category, action), max_duration=_max_duration(category, kind), soft=_soft(category, kind), dur_hard=_dur_hard(category, kind))
     except QualityRejected as e:
         set_meta(vid, e.title or candidate.get("title"), e.channel or candidate.get("channel"))
         update_status(vid, "rejected_inspect", reason=str(e)[:300])
@@ -110,7 +112,7 @@ def process(candidate: dict[str, Any], category: str, subject: str, action: str,
     last_err = ""
     for attempt in (1, 2):
         try:
-            path = download(meta, category, kind, subject, action)
+            path = download(meta, category, kind, subject, action, audio_only)
             break
         except DownloadFailed as e:
             if _is_bot_check(e):
@@ -125,7 +127,7 @@ def process(candidate: dict[str, Any], category: str, subject: str, action: str,
         return Outcome(vid, "failed", last_err)
     update_status(vid, "downloaded", file_path=str(path))
     try:
-        report = check(path, *((0, 0) if issues else (fps_t, kbps_t)))
+        report = check(path, *((0, 0) if issues or audio_only else (fps_t, kbps_t)), audio_only=audio_only)
     except QualityRejected as e:
         path.unlink(missing_ok=True)
         update_status(vid, "rejected_quality", reason=str(e)[:300])

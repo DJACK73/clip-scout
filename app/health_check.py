@@ -16,10 +16,14 @@ def _fps(rate: str) -> float:
     n, _, d = rate.partition("/")
     return float(n) / float(d or 1) if float(d or 1) else 0.0
 
-def check(path: Path, min_fps: float | None = None, min_kbps: int | None = None) -> dict[str, Any]:
+def check(path: Path, min_fps: float | None = None, min_kbps: int | None = None, audio_only: bool = False) -> dict[str, Any]:
     data = probe(path)
     v = next((s for s in data["streams"] if s["codec_type"] == "video"), None)
     a = next((s for s in data["streams"] if s["codec_type"] == "audio"), None)
+    if audio_only:
+        if not a:
+            raise QualityRejected("pas de flux audio")
+        return {"fps": 0.0, "kbps": int(data["format"].get("bit_rate", 0)) // 1000, "height": 0, "codec": a["codec_name"], "size_mb": path.stat().st_size // 1_000_000}
     if not v:
         raise QualityRejected("pas de flux vidéo")
     if not a:

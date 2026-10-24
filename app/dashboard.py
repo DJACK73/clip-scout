@@ -62,6 +62,7 @@ with _pg:
     st.caption("**Action** : le type de scène cherché, envoyé tel quel à YouTube. `✏️ Autre…` = action libre.")
     st.caption("**Type raw** : scène brute, sources natives. **pack** : clips pour edits / scenepacks. **edit** : AMV et edits déjà montés. En pack et en edit, l'action est ignorée : seuls Sujet et Précision comptent.")
     st.caption("**Autorisation** : images/s (fps), débit (bitrate) ou hauteur sous le seuil de la catégorie demandent une confirmation avant téléchargement. Durée : anime 60-800 s (de 5 à 1200 s avec autorisation), foot jusqu'à 720 s, audio jusqu'à 600 s (musique : 60 s minimum) ; au-delà, écartée.")
+    st.caption("**Audio seul** (audio, actions music_*) : télécharge uniquement la piste son en .m4a, sans image, bien plus léger qu'une vidéo. Les seuils vidéo (fps, hauteur, débit) sont ignorés, la durée reste contrôlée. Un titre déjà téléchargé en vidéo n'est pas retéléchargé (doublon) : supprime-le via le Nettoyage manuel ou choisis un autre titre.")
     st.caption("**Période** (foot, anime) : filtre YouTube « cette semaine » / « ce mois », classement par pertinence ; pas de tri par date ni de tri ascendant (pour une vidéo ancienne, mets un millésime en Précision). **Tri** (musique) : Tendance semaine/mois = les plus vues, Sans copyright = case Creative Commons de l'uploadeur, pas une garantie de licence. Destinations : music_anime, music_foot, music_both (croisement anime × foot) ; en Sans copyright, requêtes de remplacement (phonk / sport / générique) car la musique libre n'est pas spécifique à l'anime.")
 _ACTION_HELP: dict[str, dict[str, str]] = {
     "foot": {
@@ -171,6 +172,8 @@ def launch(candidate: dict, category: str, subject: str, action: str, kind: str,
     cmd = [sys.executable, "-m", "app.get", url, "--category", category, "--subject", subject, "--action", action, "--kind", kind]
     if allow_low_fps:
         cmd.append("--allow-low-fps")
+    if category == "audio" and action.startswith("music_") and st.session_state.get("s_audio"):
+        cmd.append("--audio-only")
     with log.open("w") as fh:
         proc = subprocess.Popen(cmd, cwd=ROOT, stdout=fh, stderr=subprocess.STDOUT, start_new_session=True)
     (LOGS / f"{vid}.pid").write_text(str(proc.pid))
@@ -369,6 +372,8 @@ with tab_search:
     free = choice == OTHER_ACTION
     custom = d2.text_input("Action libre", key="s_custom", disabled=not free)
     limit = d4.number_input("Limite", 1, 20, 5)
+    if s_cat == "audio" and str(choice).startswith("music_"):
+        _pad.checkbox("🎧 Audio seul (.m4a)", key="s_audio")
     _frules = load_rules()["categories"][s_cat]
     _opt = (not free) and s_kind == "raw" and choice in _frules.get("subject_optional", [])
     _sp_modes = _frules.get("sp_modes", {})
