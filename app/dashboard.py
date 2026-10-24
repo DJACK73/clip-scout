@@ -39,8 +39,48 @@ with st.expander("ℹ️ Guide", expanded=False):
     st.caption("**Précision** : mot libre ajouté à la requête (ex. un millésime ou deux noms de personnages).")
     st.caption("**Action** : le type de scène cherché, envoyé tel quel à YouTube. `✏️ Autre…` = action libre.")
     st.caption("**Type raw** : scène brute, sources natives. **pack** : clips pour edits / scenepacks. **edit** : AMV et edits déjà montés. En pack et en edit, l'action est ignorée : seuls Sujet et Précision comptent.")
-    st.caption("**Autorisation** : fps, bitrate ou hauteur sous le seuil de la catégorie demandent une confirmation avant téléchargement. Durée : anime 60-800 s (de 5 à 1200 s avec autorisation), foot jusqu'à 720 s, audio jusqu'à 600 s (musique : 60 s minimum) ; au-delà, écartée.")
+    st.caption("**Autorisation** : images/s (fps), débit (bitrate) ou hauteur sous le seuil de la catégorie demandent une confirmation avant téléchargement. Durée : anime 60-800 s (de 5 à 1200 s avec autorisation), foot jusqu'à 720 s, audio jusqu'à 600 s (musique : 60 s minimum) ; au-delà, écartée.")
     st.caption("**Période** (foot, anime) : filtre YouTube « cette semaine » / « ce mois », classement par pertinence ; pas de tri par date ni de tri ascendant (pour une vidéo ancienne, mets un millésime en Précision). **Tri** (musique) : Tendance semaine/mois = les plus vues, Sans copyright = case Creative Commons de l'uploadeur, pas une garantie de licence. Destinations : music_anime, music_foot, music_both (croisement anime × foot) ; en Sans copyright, requêtes de remplacement (phonk / sport / générique) car la musique libre n'est pas spécifique à l'anime.")
+_ACTION_HELP: dict[str, dict[str, str]] = {
+    "foot": {
+        "freekicks": "coups francs", "penalties": "penaltys", "celebrations": "célébrations de buts",
+        "long_shots": "frappes de loin", "dribbles_skills": "dribbles et gestes techniques",
+        "assists": "passes décisives", "general_comps": "compilations générales",
+        "tiki_taka": "jeu de passes courtes", "bicycle_kicks": "retournés acrobatiques",
+        "saves": "arrêts de gardien", "tackles": "tacles", "headers": "têtes",
+        "counter_attacks": "contre-attaques", "hattricks": "triplés", "one_vs_one": "duels un contre un",
+        "strength_duels": "duels physiques, force des joueurs", "best_moments": "meilleurs moments",
+        "crazy_moments": "moments fous et insolites",
+    },
+    "anime": {
+        "fights_aura": "combats avec aura", "badass_walks": "marches et entrées classes",
+        "rage_screams": "cris de rage", "sad_backstory": "passés tristes",
+        "funny_chill": "scènes drôles et détente", "general_scenepacks": "lots de scènes variées à monter",
+        "transformations": "transformations", "villain_moments": "moments de méchants",
+        "plot_twists": "retournements de situation", "training_arcs": "arcs d'entraînement",
+        "emotional_reunions": "retrouvailles émouvantes", "romance_moments": "moments romantiques",
+    },
+    "audio": {
+        "trending_music": "musiques tendance", "voicelines": "répliques de personnages",
+        "sfx": "effets sonores", "phonk": "phonk", "ambience": "ambiances",
+        "transitions": "sons de transition", "meme_sounds": "sons de mèmes",
+        "cinematic_hits": "impacts cinématiques", "music_anime": "musique pour anime (AMV)",
+        "music_foot": "musique pour foot", "music_both": "musique pour anime et foot",
+    },
+}
+with st.expander("📖 Actions et vocabulaire", expanded=False):
+    for _col, _cat in zip(st.columns(3), CATEGORIES):
+        _col.markdown(
+            f"**{CAT_LABELS[_cat]}**\n\n"
+            + "\n".join(f"- `{a}` : {_ACTION_HELP[_cat].get(a, '')}" for a in ACTIONS[_cat])
+        )
+    st.caption(
+        "**Vocabulaire** : raw = brut (source native, non montée) · pack = lot de clips à monter · "
+        "edit = vidéo déjà montée (AMV) · fps = images par seconde · bitrate = débit (kbps) · "
+        "needs_confirm = à confirmer (autorisation requise) · doublon = déjà téléchargé · "
+        "rejeté = refusé par les seuils de qualité · purged = supprimé par toi · failed = échec · "
+        "multi = dossier sans sujet précis."
+    )
 _c = _counts()
 m1, m2, m3, m4, m5 = st.columns(5)
 m1.metric("Téléchargés", _c.get("ok", 0), border=True)
@@ -235,16 +275,56 @@ with tab_url:
         except SystemExit as exc:
             st.error(str(exc))
 
+_CAT_COLORS: dict[str, str] = {"foot": "#16a34a", "anime": "#e11d48", "audio": "#7c3aed"}
+_KIND_COLORS: dict[str, str] = {"raw": "#2563eb", "pack": "#d97706", "edit": "#db2777"}
+
+
+def _btn_css(sel: str, color: str) -> str:
+    return (
+        f"{sel} button{{background:#0e1117;border:1px solid {color}80;color:{color};border-radius:12px;min-height:2.2rem;padding:0 .5rem;font-weight:600}}"
+        f"{sel} button:hover{{border-color:{color}}}"
+        f"{sel} button p{{color:inherit;font-size:.9rem}}"
+        f"{sel} button[data-testid='stBaseButton-primary']{{background:{color};border-color:{color};color:#fff}}"
+    )
+
+
+def _pick(col, key: str, label: str, value: str, skey: str) -> None:
+    col.button(
+        label,
+        key=key,
+        type="primary" if st.session_state.get(skey) == value else "secondary",
+        use_container_width=True,
+        on_click=st.session_state.__setitem__,
+        args=(skey, value),
+    )
+
+
 with tab_search:
     step_slot = st.empty()
-    c1, c2, c3 = st.columns([2, 4, 4])
-    s_cat = c1.selectbox("Catégorie", CATEGORIES, key="s_cat", format_func=CAT_LABELS.get)
+    st.session_state.setdefault("s_cat", "foot")
+    st.session_state.setdefault("s_kind", "raw")
+    _cols = st.columns([1, 1, 1, 0.3, 1, 1, 1, 2.7])
+    for _c, _k in zip(_cols[:3], CATEGORIES):
+        _pick(_c, f"cat_{_k}", CAT_LABELS[_k], _k, "s_cat")
+    for _c, _k in zip(_cols[4:7], KINDS):
+        _pick(_c, f"knd_{_k}", _k, _k, "s_kind")
+    s_cat = st.session_state["s_cat"]
+    s_kind = st.session_state["s_kind"]
+    _acts = ACTIONS[s_cat] + [OTHER_ACTION]
+    if st.session_state.get("s_action") not in _acts:
+        st.session_state["s_action"] = _acts[0]
+    st.markdown(
+        "<style>"
+        + "".join(_btn_css(f".st-key-cat_{k}", _CAT_COLORS[k]) for k in CATEGORIES)
+        + "".join(_btn_css(f".st-key-knd_{k}", _KIND_COLORS[k]) for k in KINDS)
+        + "</style>",
+        unsafe_allow_html=True,
+    )
+    c2, c3, d1, d2, d4 = st.columns([3, 3, 3, 3, 2])
     precision = c3.text_input("Précision (optionnel)")
-    d1, d2, d3, d4 = st.columns([3, 3, 2, 2])
-    choice = d1.selectbox("Action", ACTIONS[s_cat] + [OTHER_ACTION], key="s_action")
+    choice = d1.selectbox("Action", _acts, key="s_action")
     free = choice == OTHER_ACTION
     custom = d2.text_input("Action libre", key="s_custom", disabled=not free)
-    s_kind = d3.selectbox("Type", KINDS, key="s_kind")
     limit = d4.number_input("Limite", 1, 20, 5)
     _frules = load_rules()["categories"][s_cat]
     _opt = (not free) and s_kind == "raw" and choice in _frules.get("subject_optional", [])
