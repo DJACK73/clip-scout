@@ -297,6 +297,14 @@ def _btn_css(sel: str, color: str) -> str:
     )
 
 
+def _solid(sel: str, color: str) -> str:
+    return (
+        f"{sel} button{{background:{color};border:1px solid {color};color:#fff;border-radius:6px;min-height:2.2rem;padding:0 1rem;font-weight:600}}"
+        f"{sel} button:hover{{filter:brightness(1.15);border-color:{color};color:#fff}}"
+        f"{sel} button p{{color:#fff;font-size:.9rem}}"
+    )
+
+
 def _pick(col, key: str, label: str, value: str, skey: str) -> None:
     col.button(
         label,
@@ -443,18 +451,27 @@ with tab_db:
         st.success(msg)
     with st.expander("🧹 Nettoyage manuel (à faire à la fin)", expanded=bool(st.session_state.get("purge_ask"))):
         st.caption("Supprime les vidéos téléchargées (statut ok) d'une catégorie ; la ligne reste en base avec le statut purged.")
+        st.markdown(
+            "<style>"
+            + "".join(_solid(f".st-key-purge_{k}", _CAT_COLORS[k]) for k in CATEGORIES)
+            + _solid(".st-key-purge_yes", "#dc2626")
+            + _solid(".st-key-purge_no", "#64748b")
+            + "[class*='st-key-purge_'] button:disabled{opacity:.35}"
+            + "</style>",
+            unsafe_allow_html=True,
+        )
         for col, pcat in zip(st.columns(3), CATEGORIES):
             pfiles = _category_files(pcat)
             pmb = sum(p.stat().st_size for _, p in pfiles) // 1_000_000
             col.metric(CAT_LABELS[pcat], f"{len(pfiles)} fichiers")
             col.caption(f"{pmb} Mo")
-            if col.button(f"🗑️ Supprimer {pcat}", key=f"purge_{pcat}", disabled=not pfiles, width="stretch"):
+            if col.button(f"🗑️ Supprimer {pcat}", key=f"purge_{pcat}", disabled=not pfiles):
                 st.session_state["purge_ask"] = pcat
         ask = st.session_state.get("purge_ask")
         if ask:
             afiles = _category_files(ask)
             st.warning(f"Supprimer définitivement {len(afiles)} vidéo(s) de {ask} ?")
-            yes, no = st.columns(2)
+            yes, no, _sp = st.columns([2, 2, 6])
             if yes.button("Confirmer la suppression", key="purge_yes", type="primary", width="stretch"):
                 n, mb = _purge_category(ask)
                 st.session_state.pop("purge_ask", None)
