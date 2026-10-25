@@ -36,9 +36,10 @@ def download(meta: dict[str, Any], category: str, kind: str = "raw", subject: st
     name = slug(meta.get("title") or meta["video_id"])
     out_dir.mkdir(parents=True, exist_ok=True)
     last: Exception = DownloadFailed("aucun sélecteur")
-    for i, sel in enumerate(["bestaudio[ext=m4a]/bestaudio"] if audio_only else _selectors(meta["format_id"])):
+    sels = ["bestaudio[ext=m4a]/bestaudio"] if audio_only else _selectors(meta["format_id"])
+    for i, sel in enumerate(sels):
         try:
-            with yt_dlp.YoutubeDL(_opts(sel, out_dir, 1 if i == 0 else 3, name)) as ydl:
+            with yt_dlp.YoutubeDL(_opts(sel, out_dir, 1 if (i == 0 and len(sels) > 1) else 5, name)) as ydl:
                 info = ydl.extract_info(meta["url"], download=True)
             path = Path(info["requested_downloads"][0]["filepath"])
             if path.exists():
