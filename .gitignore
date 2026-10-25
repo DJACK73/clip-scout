@@ -11,3 +11,4 @@ logs/
 *.bak
 *.bak[0-9]*
 *.tgz
+backups/
