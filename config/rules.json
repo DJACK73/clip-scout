@@ -364,11 +364,27 @@
         ]
       },
       "subject_optional": [
+        "trending_music",
+        "voicelines",
+        "sfx",
+        "phonk",
+        "ambience",
+        "transitions",
+        "meme_sounds",
+        "cinematic_hits",
         "music_anime",
         "music_foot",
         "music_both"
       ],
       "subject_examples": {
+        "trending_music": "vide = requête par défaut de l'action",
+        "voicelines": "vide = requête par défaut de l'action",
+        "sfx": "vide = requête par défaut de l'action",
+        "phonk": "vide = requête par défaut de l'action",
+        "ambience": "vide = requête par défaut de l'action",
+        "transitions": "vide = requête par défaut de l'action",
+        "meme_sounds": "vide = requête par défaut de l'action",
+        "cinematic_hits": "vide = requête par défaut de l'action",
         "music_anime": "ex. phonk, lofi — vide = tous genres",
         "music_foot": "ex. phonk, lofi — vide = tous genres",
         "music_both": "ex. phonk, lofi — vide = tous genres"
