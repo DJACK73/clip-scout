@@ -377,12 +377,13 @@ with tab_search:
     _frules = load_rules()["categories"][s_cat]
     _opt = (not free) and s_kind == "raw" and choice in _frules.get("subject_optional", [])
     _sp_modes = _frules.get("sp_modes", {})
-    _music = (not free) and choice in _frules.get("action_query", {})
-    _sort_opts = ["Standard", "Tendance semaine", "Tendance mois", "Sans copyright"] if _music else ["Pertinence"]
+    _cc_ok = choice in _frules.get("action_query", {})
+    _music = (not free) and choice in _frules.get("trend_actions", list(_frules.get("action_query", {})))
+    _sort_opts = (["Standard", "Tendance semaine", "Tendance mois"] + (["Sans copyright"] if _cc_ok else [])) if _music else ["Pertinence"]
     _sort_key = {"Tendance semaine": "week", "Tendance mois": "month", "Sans copyright": "cc", "Plus récentes": "recent"}
     _periods = {"Tout": None, "Cette semaine": "EgIIAw%3D%3D", "Ce mois": "EgIIBA%3D%3D"}
     if _music:
-        sort_label = st.segmented_control("Tri", _sort_opts, default=_sort_opts[0], key="s_sort_m") or _sort_opts[0]
+        sort_label = st.segmented_control("Tri", _sort_opts, default=_sort_opts[0], key="s_sort_m_cc" if _cc_ok else "s_sort_m") or _sort_opts[0]
     else:
         sort_label = st.segmented_control("Période", list(_periods), default="Tout", key="s_period") or "Tout"
     _mode = _sort_key.get(sort_label)

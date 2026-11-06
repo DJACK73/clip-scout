@@ -319,6 +319,7 @@
       "max_duration_sec": 600,
       "action_aliases": {
         "trending_music": [
+          "viral songs",
           "trending music",
           "trending",
           "music",
@@ -337,6 +338,7 @@
           "sound effects"
         ],
         "phonk": [
+          "viral phonk",
           "phonk",
           "drift phonk",
           "brazilian phonk"
@@ -408,6 +410,17 @@
         "music_anime": "no copyright phonk",
         "music_foot": "no copyright sport music",
         "music_both": "no copyright music"
+      },
+      "trend_actions": [
+        "trending_music",
+        "phonk",
+        "music_anime",
+        "music_foot",
+        "music_both"
+      ],
+      "min_views": {
+        "week": 10000,
+        "month": 30000
       }
     }
   },

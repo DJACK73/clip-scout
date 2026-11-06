@@ -25,6 +25,14 @@ def find_candidates_ex(category: str, subject: str, action: str, limit: int = 5,
         ranked = _demote(ranked)
     if sp and sp.startswith("CAM"):
         ranked = sorted(ranked, key=lambda e: -(e.get("view_count") or 0))
+        from app.profiler import load_rules as _lr
+        _c = _lr()["categories"][category]
+        _sm = _c.get("sp_modes", {})
+        _k = "week" if sp == _sm.get("week") else "month" if sp == _sm.get("month") else None
+        _thr = _c.get("min_views", {}).get(_k, 0) if _k else 0
+        _kept = [e for e in ranked if (e.get("view_count") or 0) >= _thr]
+        if _kept:
+            ranked = _kept
     stats["rank_dropped"] = len(raw) - len(ranked)
     seen = seen_titles(category)
     new = 0
