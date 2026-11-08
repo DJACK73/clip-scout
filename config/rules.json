@@ -19,7 +19,13 @@
         "one_vs_one",
         "strength_duels",
         "best_moments",
-        "crazy_moments"
+        "crazy_moments",
+        "angle_goals",
+        "rabona_goals",
+        "backheel_goals",
+        "nutmegs",
+        "solo_goals",
+        "gk_goals"
       ],
       "forced_keywords": [
         "60fps",
@@ -102,6 +108,32 @@
           "1v1",
           "one on one",
           "one vs one"
+        ],
+        "angle_goals": [
+          "tight angle goal",
+          "impossible angle goal",
+          "narrow angle goal"
+        ],
+        "rabona_goals": [
+          "rabona goal",
+          "rabona"
+        ],
+        "backheel_goals": [
+          "backheel goal",
+          "backheel"
+        ],
+        "nutmegs": [
+          "nutmeg",
+          "nutmegs",
+          "megs"
+        ],
+        "solo_goals": [
+          "solo goal",
+          "solo run goal"
+        ],
+        "gk_goals": [
+          "goalkeeper goal",
+          "keeper scores"
         ]
       },
       "min_fps": 29,
@@ -148,7 +180,13 @@
         "one_vs_one",
         "strength_duels",
         "best_moments",
-        "crazy_moments"
+        "crazy_moments",
+        "angle_goals",
+        "rabona_goals",
+        "backheel_goals",
+        "nutmegs",
+        "solo_goals",
+        "gk_goals"
       ],
       "subject_examples": {
         "strength_duels": "ex. haaland, lukaku — vide = tous joueurs",

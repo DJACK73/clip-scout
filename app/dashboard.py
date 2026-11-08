@@ -57,16 +57,17 @@ _pa = _a.popover("📖 Actions", key="pop_actions", width="stretch")
 _o.button("📂 Ouvrir le dossier", key="open_dir", on_click=_open_folder, width="stretch")
 with _pg:
     st.caption("**Étapes** : Chercher → Choisir → Télécharger. Un clip déjà téléchargé ou déjà rejeté n'est jamais retéléchargé (badge « doublon » / « rejeté »).")
-    st.caption("**Sujet** : titre d'anime, joueur ou genre. Peut rester vide pour foot (strength_duels, best_moments, crazy_moments) et anime (fights_aura, rage_screams, sad_backstory) : recherche sur tous les sujets, rangement dans le dossier `multi`.")
+    st.caption("**Sujet** : titre d'anime, joueur ou genre. Peut rester vide pour toutes les actions foot et audio, et pour anime (fights_aura, rage_screams, sad_backstory) : recherche sur tous les sujets, rangement dans le dossier `multi`.")
     st.caption("**Précision** : mot libre ajouté à la requête (ex. un millésime ou deux noms de personnages).")
     st.caption("**Action** : le type de scène cherché, envoyé tel quel à YouTube. `✏️ Autre…` = action libre.")
+    st.caption("**Formats foot spéciaux** : angle_goals = buts marqués depuis un angle très fermé, près de la ligne de but (façon Yamal) · rabona_goals = rabonas (frappe pied d'appui croisé derrière la jambe) · backheel_goals = buts du talon · nutmegs = petits ponts (ballon passé entre les jambes) · solo_goals = buts après un long dribble en solitaire · gk_goals = buts marqués par des gardiens. Ce sont des requêtes YouTube en anglais, pas des filtres : la pertinence dépend des titres, vérifie avant de télécharger.")
     st.caption("**Type raw** : scène brute, sources natives. **pack** : clips pour edits / scenepacks. **edit** : AMV et edits déjà montés. En pack et en edit, l'action est ignorée : seuls Sujet et Précision comptent.")
     st.caption("**Autorisation** : images/s (fps), débit (bitrate) ou hauteur sous le seuil de la catégorie demandent une confirmation avant téléchargement. Durée : anime 60-800 s (de 5 à 1200 s avec autorisation), foot jusqu'à 720 s, audio jusqu'à 600 s (musique : 60 s minimum) ; au-delà, écartée.")
     st.caption("**Audio seul** (catégorie audio, toutes actions) : télécharge uniquement la piste son en .m4a, sans image, bien plus léger qu'une vidéo. Les seuils vidéo (fps, hauteur, débit) sont ignorés, la durée reste contrôlée. Un titre déjà téléchargé en vidéo n'est pas retéléchargé (doublon) : supprime-le via le Nettoyage manuel ou choisis un autre titre.")
-    st.caption("**Période** (foot, anime) : filtre YouTube « cette semaine » / « ce mois », classement par pertinence ; pas de tri par date ni de tri ascendant (pour une vidéo ancienne, mets un millésime en Précision). **Tri** (musique) : Tendance semaine/mois = les plus vues, Sans copyright = case Creative Commons de l'uploadeur, pas une garantie de licence. Destinations : music_anime, music_foot, music_both (croisement anime × foot) ; en Sans copyright, requêtes de remplacement (phonk / sport / générique) car la musique libre n'est pas spécifique à l'anime.")
+    st.caption("**Période** (foot, anime) : filtre YouTube « cette semaine » / « ce mois », classement par pertinence ; pas de tri par date ni de tri ascendant (pour une vidéo ancienne, mets un millésime en Précision). **Tri** (trending_music, phonk, music_*) : Tendance semaine/mois = les plus vues sur la période, avec un minimum de vues pour écarter les titres confidentiels ; trending_music cherche des sons « slowed reverb edit » (ralentis avec écho) et phonk des sons « phonk edit », ceux utilisés dans les montages. Sans copyright (music_* seulement) = case Creative Commons de l'uploadeur, pas une garantie de licence. Destinations : music_anime, music_foot, music_both (croisement anime × foot) ; en Sans copyright, requêtes de remplacement (phonk / sport / générique) car la musique libre n'est pas spécifique à l'anime.")
 _ACTION_HELP: dict[str, dict[str, str]] = {
     "foot": {
-        "freekicks": "coups francs", "penalties": "penaltys", "celebrations": "célébrations de buts",
+        "angle_goals": "buts à angle fermé", "rabona_goals": "rabonas", "backheel_goals": "buts du talon", "nutmegs": "petits ponts", "solo_goals": "buts en solitaire", "gk_goals": "buts de gardiens", "freekicks": "coups francs", "penalties": "penaltys", "celebrations": "célébrations de buts",
         "long_shots": "frappes de loin", "dribbles_skills": "dribbles et gestes techniques",
         "assists": "passes décisives", "general_comps": "compilations générales",
         "tiki_taka": "jeu de passes courtes", "bicycle_kicks": "retournés acrobatiques",
@@ -84,8 +85,8 @@ _ACTION_HELP: dict[str, dict[str, str]] = {
         "emotional_reunions": "retrouvailles émouvantes", "romance_moments": "moments romantiques",
     },
     "audio": {
-        "trending_music": "musiques tendance", "voicelines": "répliques de personnages",
-        "sfx": "effets sonores", "phonk": "phonk", "ambience": "ambiances",
+        "trending_music": "musiques tendance (sons slowed reverb utilisés en edits)", "voicelines": "répliques de personnages",
+        "sfx": "effets sonores", "phonk": "phonk (sons d'edits, style agressif)", "ambience": "ambiances",
         "transitions": "sons de transition", "meme_sounds": "sons de mèmes",
         "cinematic_hits": "impacts cinématiques", "music_anime": "musique pour anime (AMV)",
         "music_foot": "musique pour foot", "music_both": "musique pour anime et foot",
@@ -102,7 +103,7 @@ with _pa:
         "edit = vidéo déjà montée (AMV) · fps = images par seconde · bitrate = débit (kbps) · "
         "needs_confirm = à confirmer (autorisation requise) · doublon = déjà téléchargé · "
         "rejeté = refusé par les seuils de qualité · purged = supprimé par toi · failed = échec · "
-        "multi = dossier sans sujet précis."
+        "multi = dossier sans sujet précis · slowed + reverb = musique ralentie avec écho · phonk = style de musique des edits sportifs et anime · Tendance = classement par nombre de vues sur la période."
     )
 _c = _counts()
 m1, m2, m3, m4, m5 = st.columns(5)
