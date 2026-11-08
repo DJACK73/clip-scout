@@ -4,7 +4,7 @@ from app.settings import settings
 
 def get_connection() -> sqlite3.Connection:
     Path(settings.database_path).parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(settings.database_path)
+    conn = sqlite3.connect(settings.database_path, timeout=30)
     conn.row_factory = sqlite3.Row
     return conn
 

@@ -121,6 +121,7 @@ tab_search, tab_url, tab_db = st.tabs(["🔍 Recherche", "🔗 URL directe", "�
 
 ROOT = Path(__file__).resolve().parents[1]
 LOGS = ROOT / "logs"
+MAX_PAR = 3
 
 def _alive(pid: int) -> bool:
     try:
@@ -149,7 +150,7 @@ def cancel() -> None:
     from app.cleanup import purge_partials
     from app.database import update_status
     job = st.session_state.get("job")
-    targets = [(job["video_id"], job["proc"].pid)] if job and job["proc"].poll() is None else running_jobs()
+    targets = running_jobs()
     for vid, pid in targets:
         try:
             os.killpg(pid, signal.SIGTERM)
@@ -186,11 +187,22 @@ def launch(candidate: dict, category: str, subject: str, action: str, kind: str,
     st.session_state["job"] = {"proc": proc, "video_id": vid, "log": str(log), "args": (candidate, category, subject, action, kind)}
 
 def render_job() -> None:
+    import time as _t
     _q = st.session_state.get("queue")
-    if _q and not busy():
+    _n = 0
+    while _q and len(running_jobs()) < MAX_PAR:
+        if _n:
+            _t.sleep(2)
         launch(*_q.pop(0))
-        st.rerun()
+        _n += 1
     job = st.session_state.get("job")
+    for _v, _pid in running_jobs():
+        if not job or _v != job["video_id"]:
+            st.info(f"En cours : {_v}")
+            _p = _progress(str(LOGS / f"{_v}.log"))
+            st.progress((_p or 0) / 100, text=f"{_p:.0f} %" if _p is not None else "Téléchargement en cours…")
+    if _q:
+        st.caption(f"En attente : {len(_q)}")
     if not job:
         orphans = running_jobs()
         if orphans:
@@ -216,7 +228,7 @@ def render_job() -> None:
         st.info(f"En cours : {job['video_id']} — statut : {status}")
         pct = _progress(job["log"])
         st.progress((pct or 0) / 100, text=f"{pct:.0f} %" if pct is not None else "Téléchargement en cours…")
-        if st.button("Annuler", key="cancel_job"):
+        if st.button("Tout annuler", key="cancel_job"):
             cancel()
             st.rerun()
         return
@@ -349,7 +361,7 @@ with tab_url:
         + "</style>",
         unsafe_allow_html=True,
     )
-    if st.button("Télécharger", key="u_go", disabled=busy() or bool(st.session_state.get("queue"))) and urls.strip():
+    if st.button("Télécharger", key="u_go", disabled=bool(st.session_state.get("queue")) or len(running_jobs()) >= MAX_PAR) and urls.strip():
         from app.search_ytdlp import first_hit
         _fmt = {"Vidéo": "", "m4a": "m4a", "mp3": "mp3"}[u_fmt]
         _items, _seen = [], set()
