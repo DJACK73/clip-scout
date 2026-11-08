@@ -249,7 +249,7 @@
           "sad moments"
         ],
         "funny_chill": [
-          "funny moments",
+          "funny moments raw clips",
           "funny",
           "chill",
           "comedy"
@@ -304,7 +304,8 @@
       "action_forced_keywords": {
         "fights_aura": [],
         "rage_screams": [],
-        "sad_backstory": []
+        "sad_backstory": [],
+        "funny_chill": []
       },
       "min_duration_sec": 60,
       "duration_hard_min_sec": 5,
@@ -384,7 +385,7 @@
           "atmosphere"
         ],
         "transitions": [
-          "transition",
+          "transition sound effect",
           "transitions",
           "whoosh"
         ],
@@ -427,9 +428,9 @@
         "music_both": "ex. phonk, lofi — vide = tous genres"
       },
       "action_query": {
-        "music_anime": "anime amv song",
-        "music_foot": "football skills song",
-        "music_both": "anime football music"
+        "music_anime": "anime edit song",
+        "music_foot": "football phonk edit",
+        "music_both": "blue lock phonk edit"
       },
       "sp_modes": {
         "week": "CAMSBggDEAEYAQ%3D%3D",

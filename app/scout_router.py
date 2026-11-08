@@ -31,7 +31,7 @@ def find_candidates_ex(category: str, subject: str, action: str, limit: int = 5,
         _k = "week" if sp == _sm.get("week") else "month" if sp == _sm.get("month") else None
         _thr = _c.get("min_views", {}).get(_k, 0) if _k else 0
         _kept = [e for e in ranked if (e.get("view_count") or 0) >= _thr]
-        if _kept:
+        if len(_kept) >= limit:
             ranked = _kept
     stats["rank_dropped"] = len(raw) - len(ranked)
     seen = seen_titles(category)
