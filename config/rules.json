@@ -28,12 +28,7 @@
         "gk_goals"
       ],
       "forced_keywords": [
-        "60fps",
-        "clean feed",
-        "logless",
-        "no commentary",
-        "open matte",
-        "player cam"
+        "60fps"
       ],
       "action_aliases": {
         "freekicks": [
@@ -52,10 +47,12 @@
           "celebrates"
         ],
         "long_shots": [
+          "long range goal",
           "long shot",
           "long range",
           "long-range",
-          "screamer"
+          "screamer",
+          "outside the box"
         ],
         "dribbles_skills": [
           "dribble",
@@ -105,6 +102,7 @@
           "hattrick"
         ],
         "one_vs_one": [
+          "1v1 vs keeper goal",
           "1v1",
           "one on one",
           "one vs one"
@@ -211,10 +209,7 @@
         "romance_moments"
       ],
       "forced_keywords": [
-        "scenepack",
-        "logless",
-        "bluray raw",
-        "no sub"
+        "scenepack"
       ],
       "min_fps": 24,
       "min_kbps": 2000,
@@ -365,6 +360,7 @@
           "phonk"
         ],
         "voicelines": [
+          "voice lines for edits",
           "voice line",
           "voicelines",
           "voiceline",
@@ -382,6 +378,7 @@
           "brazilian phonk"
         ],
         "ambience": [
+          "short ambience sound effect loop",
           "ambience",
           "ambient",
           "atmosphere"
@@ -507,6 +504,7 @@
     "\\bfc\\s?2\\d\\b",
     "\\befootball\\b",
     "\\bea\\s?sports\\s?fc\\b",
-    "\\bfifa\\b(?!\\s*(?:world|women|club|arab|confed|the\\s+best|u-?\\d))"
+    "\\bfifa\\b(?!\\s*(?:world|women|club|arab|confed|the\\s+best|u-?\\d))",
+    "\\b(how to|tutorial)\\b"
   ]
 }
