@@ -72,7 +72,7 @@ def _soft(category: str, kind: str = "raw") -> set[str]:
 def _is_bot_check(err: Exception) -> bool:
     return BOT_MARKER in str(err) or "confirm you're not a bot" in str(err)
 
-def process(candidate: dict[str, Any], category: str, subject: str, action: str, kind: str = "raw", allow_low_fps: bool = False, audio_only: bool = False) -> Outcome:
+def process(candidate: dict[str, Any], category: str, subject: str, action: str, kind: str = "raw", allow_low_fps: bool = False, audio_only: bool = False, audio_fmt: str = "m4a") -> Outcome:
     vid = candidate["video_id"]
     subject = subject.strip().lower()
     action = action.strip().lower()
@@ -112,7 +112,7 @@ def process(candidate: dict[str, Any], category: str, subject: str, action: str,
     last_err = ""
     for attempt in (1, 2):
         try:
-            path = download(meta, category, kind, subject, action, audio_only)
+            path = download(meta, category, kind, subject, action, audio_only, audio_fmt)
             break
         except DownloadFailed as e:
             if _is_bot_check(e):

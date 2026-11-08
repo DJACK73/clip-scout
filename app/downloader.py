@@ -14,8 +14,8 @@ def _selectors(format_id: str) -> list[str]:
         f"bv*[height<={h}][vcodec^=avc1][protocol^=https]+ba[ext=m4a]/bv*[height<={h}][vcodec!^=av01][protocol^=https]+ba/b[height<={h}]",
     ]
 
-def _opts(selector: str, out_dir: Path, retries: int = 3, name: str = "") -> dict[str, Any]:
-    return {
+def _opts(selector: str, out_dir: Path, retries: int = 3, name: str = "", audio_fmt: str = "") -> dict[str, Any]:
+    opts = {
         **build_ydl_opts(),
         "format": selector,
         "merge_output_format": "mp4",
@@ -26,8 +26,11 @@ def _opts(selector: str, out_dir: Path, retries: int = 3, name: str = "") -> dic
         "fragment_retries": retries,
         "extractor_retries": 2,
     }
+    if audio_fmt == "mp3":
+        opts["postprocessors"] = [{"key": "FFmpegExtractAudio", "preferredcodec": "mp3", "preferredquality": "192"}]
+    return opts
 
-def download(meta: dict[str, Any], category: str, kind: str = "raw", subject: str = "manual", action: str = "manual", audio_only: bool = False) -> Path:
+def download(meta: dict[str, Any], category: str, kind: str = "raw", subject: str = "manual", action: str = "manual", audio_only: bool = False, audio_fmt: str = "m4a") -> Path:
     check_disk()
     parts = [slug(subject), slug(action)]
     if parts == ["manual", "manual"]:
@@ -39,7 +42,7 @@ def download(meta: dict[str, Any], category: str, kind: str = "raw", subject: st
     sels = ["bestaudio[ext=m4a]/bestaudio"] if audio_only else _selectors(meta["format_id"])
     for i, sel in enumerate(sels):
         try:
-            with yt_dlp.YoutubeDL(_opts(sel, out_dir, 1 if (i == 0 and len(sels) > 1) else 5, name)) as ydl:
+            with yt_dlp.YoutubeDL(_opts(sel, out_dir, 1 if (i == 0 and len(sels) > 1) else 5, name, audio_fmt if audio_only else "")) as ydl:
                 info = ydl.extract_info(meta["url"], download=True)
             path = Path(info["requested_downloads"][0]["filepath"])
             if path.exists():

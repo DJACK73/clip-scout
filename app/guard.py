@@ -29,6 +29,14 @@ def network_delay() -> None:
     log(f"Délai réseau {delay:.1f}s")
     time.sleep(delay)
 
+def pot_up() -> bool:
+    import urllib.request
+    try:
+        with urllib.request.urlopen("http://127.0.0.1:4416/ping", timeout=1) as r:
+            return r.status == 200
+    except Exception:
+        return False
+
 def build_ydl_opts() -> dict:
     opts: dict = {
         "http_headers": {
@@ -44,4 +52,6 @@ def build_ydl_opts() -> dict:
     }
     if COOKIES_PATH.exists() and COOKIES_PATH.stat().st_size > 0:
         opts["cookiefile"] = str(COOKIES_PATH)
+    if pot_up():
+        opts["extractor_args"] = {"youtube": {"fetch_pot": ["always"]}}
     return opts

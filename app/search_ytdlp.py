@@ -91,3 +91,13 @@ def search_ex(category: str, subject: str, action: str, limit: int = 10, kind: s
 
 def search(category: str, subject: str, action: str, limit: int = 10, kind: str = "raw") -> list[dict]:
     return search_ex(category, subject, action, limit, kind)[0]
+
+def first_hit(query: str, audio: bool = False) -> dict | None:
+    for e in _fetch(query, 5):
+        if not e.get("id") or e.get("live_status") in ("is_live", "is_upcoming"):
+            continue
+        d = e.get("duration")
+        if audio and d and not 60 <= d <= 900:
+            continue
+        return _candidate(e)
+    return None

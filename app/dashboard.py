@@ -113,6 +113,9 @@ m3.metric("Échecs", _c.get("failed", 0), border=True)
 m4.metric("Supprimés", _c.get("purged", 0), border=True)
 m5.metric("Disque libre", f"{free_disk_gb():.0f} Go", border=True)
 
+from app.guard import pot_up
+if not pot_up():
+    st.warning("Serveur PO token arrêté : docker start bgutil-pot")
 panel = st.container()
 tab_search, tab_url, tab_db = st.tabs(["🔍 Recherche", "🔗 URL directe", "🗄️ Base"])
 
@@ -165,7 +168,7 @@ def busy() -> bool:
         return True
     return bool(running_jobs())
 
-def launch(candidate: dict, category: str, subject: str, action: str, kind: str, allow_low_fps: bool = False) -> None:
+def launch(candidate: dict, category: str, subject: str, action: str, kind: str, allow_low_fps: bool = False, audio_fmt: str = "") -> None:
     vid = candidate["video_id"]
     url = candidate.get("url") or f"https://www.youtube.com/watch?v={vid}"
     LOGS.mkdir(exist_ok=True)
@@ -175,12 +178,18 @@ def launch(candidate: dict, category: str, subject: str, action: str, kind: str,
         cmd.append("--allow-low-fps")
     if category == "audio" and st.session_state.get("s_audio"):
         cmd.append("--audio-only")
+    if audio_fmt:
+        cmd += ["--audio-only", "--audio-fmt", audio_fmt]
     with log.open("w") as fh:
         proc = subprocess.Popen(cmd, cwd=ROOT, stdout=fh, stderr=subprocess.STDOUT, start_new_session=True)
     (LOGS / f"{vid}.pid").write_text(str(proc.pid))
     st.session_state["job"] = {"proc": proc, "video_id": vid, "log": str(log), "args": (candidate, category, subject, action, kind)}
 
 def render_job() -> None:
+    _q = st.session_state.get("queue")
+    if _q and not busy():
+        launch(*_q.pop(0))
+        st.rerun()
     job = st.session_state.get("job")
     if not job:
         orphans = running_jobs()
@@ -321,7 +330,8 @@ def _pick(col, key: str, label: str, value: str, skey: str) -> None:
 
 
 with tab_url:
-    url = st.text_input("URL")
+    urls = st.text_area("URL ou nom (1 par ligne, max 4)", key="u_urls", height=110)
+    u_fmt = st.radio("Format", ["Vidéo", "m4a", "mp3"], horizontal=True, key="u_fmt")
     st.caption("URL directe : exclusions de mots-clés ignorées, seuils fps/kbps/hauteur appliqués au type raw.")
     st.session_state.setdefault("u_cat", "foot")
     st.session_state.setdefault("u_kind", "raw")
@@ -339,12 +349,31 @@ with tab_url:
         + "</style>",
         unsafe_allow_html=True,
     )
-    if st.button("Télécharger", key="u_go", disabled=busy()) and url:
-        try:
-            vid = video_id(url)
-            download({"video_id": vid, "url": f"https://www.youtube.com/watch?v={vid}"}, cat, "manual", "manual", kind)
-        except SystemExit as exc:
-            st.error(str(exc))
+    if st.button("Télécharger", key="u_go", disabled=busy() or bool(st.session_state.get("queue"))) and urls.strip():
+        from app.search_ytdlp import first_hit
+        _fmt = {"Vidéo": "", "m4a": "m4a", "mp3": "mp3"}[u_fmt]
+        _items, _seen = [], set()
+        for _line in [x.strip() for x in urls.splitlines() if x.strip()][:4]:
+            try:
+                if _line.startswith("http"):
+                    _vid = video_id(_line)
+                    _cand = {"video_id": _vid, "url": f"https://www.youtube.com/watch?v={_vid}"}
+                else:
+                    _cand = first_hit(_line, bool(_fmt))
+                    if not _cand:
+                        st.error(f"introuvable : {_line}")
+                        continue
+            except (SystemExit, Exception) as exc:
+                st.error(f"{_line} : {exc}")
+                continue
+            if _cand["video_id"] not in _seen:
+                _seen.add(_cand["video_id"])
+                _items.append((_cand, cat, "manual", "manual", kind, False, _fmt))
+        if _items:
+            st.session_state["queue"] = _items
+            st.rerun()
+    if cat == "audio" or u_fmt != "Vidéo":
+        st.caption("⚠️ Musique : œuvres protégées par le droit d'auteur. Usage personnel uniquement, ne pas republier sans licence.")
 
 with tab_search:
     step_slot = st.empty()
