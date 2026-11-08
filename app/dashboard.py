@@ -25,6 +25,8 @@ def _counts() -> dict[str, int]:
     return status_counts()
 
 st.markdown("<style>[data-testid='stAppDeployButton']{display:none}</style>", unsafe_allow_html=True)
+from app.menu_fr import translate_menu
+translate_menu()
 def _open_folder() -> None:
     win = subprocess.run(["wslpath", "-w", str(settings.base_storage_path)], capture_output=True, text=True).stdout.strip()
     subprocess.Popen(["explorer.exe", win])
@@ -79,7 +81,7 @@ with _pg:
     st.caption("**Audio seul** (catégorie audio, toutes actions) : télécharge uniquement la piste son en .m4a, sans image, bien plus léger qu'une vidéo. Les seuils vidéo (fps, hauteur, débit) sont ignorés, la durée reste contrôlée. Un titre déjà téléchargé en vidéo n'est pas retéléchargé (doublon) : supprime-le via le Nettoyage manuel ou choisis un autre titre.")
     st.caption("**Période** (foot, anime) : filtre YouTube « cette semaine » / « ce mois », classement par pertinence ; pas de tri par date ni de tri ascendant (pour une vidéo ancienne, mets un millésime en Précision). **Tri** (trending_music, phonk, music_*) : Tendance semaine/mois = les plus vues sur la période, avec un minimum de vues pour écarter les titres confidentiels ; trending_music cherche des sons « slowed reverb edit » (ralentis avec écho) et phonk des sons « phonk edit », ceux utilisés dans les montages. Sans copyright (music_* seulement) = case Creative Commons de l'uploadeur, pas une garantie de licence. Destinations : music_anime, music_foot, music_both (croisement anime × foot) ; en Sans copyright, requêtes de remplacement (phonk / sport / générique) car la musique libre n'est pas spécifique à l'anime.")
 with _pg:
-    st.caption("**Thème** : menu ⋮ en haut à droite → Settings → thème système (auto), clair ou sombre.")
+    st.caption("**Thème** : menu ⋮ en haut à droite → Système (auto), Clair ou Sombre.")
 _ACTION_HELP: dict[str, dict[str, str]] = {
     "foot": {
         "angle_goals": "buts à angle fermé", "rabona_goals": "rabonas", "backheel_goals": "buts du talon", "nutmegs": "petits ponts", "solo_goals": "buts en solitaire", "gk_goals": "buts de gardiens", "freekicks": "coups francs", "penalties": "penaltys", "celebrations": "célébrations de buts",
