@@ -1,16 +1,16 @@
 [theme]
-primaryColor = "#7c5cff"
+primaryColor = "#e8895a"
 baseRadius = "large"
 font = "sans serif"
 
 [theme.light]
-backgroundColor = "#f6f7fb"
-secondaryBackgroundColor = "#e9ebf4"
-textColor = "#14172a"
-borderColor = "#d5d9e8"
+backgroundColor = "#faf7f3"
+secondaryBackgroundColor = "#f0ebe4"
+textColor = "#1d1a17"
+borderColor = "#ded6cc"
 
 [theme.dark]
-backgroundColor = "#0b0d14"
-secondaryBackgroundColor = "#161a26"
-textColor = "#e8eaf2"
-borderColor = "#262b3d"
+backgroundColor = "#131110"
+secondaryBackgroundColor = "#1d1a18"
+textColor = "#efeae4"
+borderColor = "#302b27"

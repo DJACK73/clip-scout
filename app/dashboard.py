@@ -31,18 +31,31 @@ def _open_folder() -> None:
 
 def _pill(sel: str, color: str) -> str:
     return (
-        f"{sel} button{{background:#0e1117;border:1px solid {color}80;color:{color};border-radius:12px;min-height:2.2rem;font-weight:600}}"
-        f"{sel} button:hover{{border-color:{color}}}"
-        f"{sel} button p{{color:inherit;font-size:.9rem}}"
+        f"{sel} button{{background:transparent;border:1px solid rgba(128,128,128,.28);border-left:3px solid {color};color:inherit;border-radius:6px;min-height:2rem;padding:0 .8rem;font-weight:500;font-size:.82rem;transition:border-color .15s,background .15s}}"
+        f"{sel} button:hover{{border-color:{color};background:color-mix(in srgb,{color} 12%,transparent)}}"
+        f"{sel} button p{{color:inherit;font-size:.82rem}}"
     )
 
 
 st.markdown(
     "<style>"
-    "[data-testid='stMainBlockContainer']{padding-top:1.6rem}"
-    "[data-testid='stMetric']{padding:.35rem .8rem}"
-    "[data-testid='stMetricValue']{font-size:1.4rem}"
-    "[data-testid='stMetricLabel'] p{font-size:.75rem}"
+    "[data-testid='stMainBlockContainer']{padding-top:2.6rem;max-width:1120px}"
+    "[data-testid='stMetric']{padding:.8rem 1.1rem;border-radius:14px}"
+    "[data-testid='stMetricValue']{font-size:1.75rem;font-weight:600;letter-spacing:-.01em}"
+    "[data-testid='stMetricLabel'] p{font-size:.8rem;opacity:.6}"
+    "[data-baseweb='tab-list']{gap:.4rem}"
+    "[data-baseweb='tab']{height:2.7rem;padding:0 1.1rem;outline:none!important;box-shadow:none!important}"
+    "[data-baseweb='tab'] p{font-weight:600;font-size:.95rem}"
+    "[data-testid='stWidgetLabel'] p{font-size:.8rem;font-weight:500;opacity:.7}"
+    "[data-testid='stAlert']{border-radius:12px}"
+    "[data-testid='stExpander']{border-radius:14px}"
+    "[data-testid='stDataFrame']{border-radius:14px;overflow:hidden}"
+    "[class*='st-key-card_']{border-radius:14px;padding:.3rem;transition:border-color .15s}"
+    "[class*='st-key-card_']:hover{border-color:rgba(128,128,128,.55)}"
+    "[class*='st-key-card_'] img{border-radius:10px}"
+    ".st-key-s_go button,.st-key-u_go button{min-height:2.5rem;padding:0 1.8rem;font-weight:600;border-radius:10px}"
+    ".cs-title{font-size:1.5rem;font-weight:700;letter-spacing:-.01em;line-height:1.25}"
+    ".cs-sub{font-size:.8rem;opacity:.55;margin:.1rem 0 .8rem}"
     "[data-testid='stPopoverBody']{min-width:min(900px,92vw);max-width:92vw}"
     + _pill(".st-key-pop_guide", "#0ea5e9")
     + _pill(".st-key-pop_actions", "#f59e0b")
@@ -51,7 +64,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 _t, _g, _a, _o = st.columns([4, 1.3, 1.5, 2.2], vertical_alignment="center")
-_t.markdown("#### 🎬 clip-scout\n<small>Sourcing de rushs bruts · yt-dlp + FFprobe</small>", unsafe_allow_html=True)
+_t.markdown("<div class='cs-title'>🎬 clip-scout</div><div class='cs-sub'>Sourcing de rushs bruts · yt-dlp + FFprobe</div>", unsafe_allow_html=True)
 _pg = _g.popover("ℹ️ Guide", key="pop_guide", width="stretch")
 _pa = _a.popover("📖 Actions", key="pop_actions", width="stretch")
 _o.button("📂 Ouvrir le dossier", key="open_dir", on_click=_open_folder, width="stretch")
@@ -65,6 +78,8 @@ with _pg:
     st.caption("**Autorisation** : images/s (fps), débit (bitrate) ou hauteur sous le seuil de la catégorie demandent une confirmation avant téléchargement. Durée : anime 60-800 s (de 5 à 1200 s avec autorisation), foot jusqu'à 720 s, audio jusqu'à 600 s (musique : 60 s minimum) ; au-delà, écartée.")
     st.caption("**Audio seul** (catégorie audio, toutes actions) : télécharge uniquement la piste son en .m4a, sans image, bien plus léger qu'une vidéo. Les seuils vidéo (fps, hauteur, débit) sont ignorés, la durée reste contrôlée. Un titre déjà téléchargé en vidéo n'est pas retéléchargé (doublon) : supprime-le via le Nettoyage manuel ou choisis un autre titre.")
     st.caption("**Période** (foot, anime) : filtre YouTube « cette semaine » / « ce mois », classement par pertinence ; pas de tri par date ni de tri ascendant (pour une vidéo ancienne, mets un millésime en Précision). **Tri** (trending_music, phonk, music_*) : Tendance semaine/mois = les plus vues sur la période, avec un minimum de vues pour écarter les titres confidentiels ; trending_music cherche des sons « slowed reverb edit » (ralentis avec écho) et phonk des sons « phonk edit », ceux utilisés dans les montages. Sans copyright (music_* seulement) = case Creative Commons de l'uploadeur, pas une garantie de licence. Destinations : music_anime, music_foot, music_both (croisement anime × foot) ; en Sans copyright, requêtes de remplacement (phonk / sport / générique) car la musique libre n'est pas spécifique à l'anime.")
+with _pg:
+    st.caption("**Thème** : menu ⋮ en haut à droite → Settings → thème système (auto), clair ou sombre.")
 _ACTION_HELP: dict[str, dict[str, str]] = {
     "foot": {
         "angle_goals": "buts à angle fermé", "rabona_goals": "rabonas", "backheel_goals": "buts du talon", "nutmegs": "petits ponts", "solo_goals": "buts en solitaire", "gk_goals": "buts de gardiens", "freekicks": "coups francs", "penalties": "penaltys", "celebrations": "célébrations de buts",
@@ -315,9 +330,9 @@ _KIND_COLORS: dict[str, str] = {"raw": "#2563eb", "pack": "#d97706", "edit": "#d
 
 def _btn_css(sel: str, color: str) -> str:
     return (
-        f"{sel} button{{background:#0e1117;border:1px solid {color}80;color:{color};border-radius:12px;min-height:2.2rem;padding:0 .5rem;font-weight:600}}"
-        f"{sel} button:hover{{border-color:{color}}}"
-        f"{sel} button p{{color:inherit;font-size:.9rem}}"
+        f"{sel} button{{background:transparent;border:1px solid rgba(128,128,128,.28);border-left:3px solid {color};color:inherit;border-radius:6px;min-height:2rem;padding:0 .8rem;font-weight:500;font-size:.82rem;transition:border-color .15s,background .15s}}"
+        f"{sel} button:hover{{border-color:{color};background:color-mix(in srgb,{color} 12%,transparent)}}"
+        f"{sel} button p{{color:inherit;font-size:.82rem}}"
         f"{sel} button[data-testid='stBaseButton-primary']{{background:{color};border-color:{color};color:#fff}}"
     )
 
@@ -437,7 +452,7 @@ with tab_search:
     subj = subject.strip()
     action = custom.strip() if free else choice
     store_action = slug(action) if free else action
-    if st.button("Chercher", type="primary", disabled=not ((subj or _opt) and action)):
+    if st.button("Chercher", key="s_go", type="primary", disabled=not ((subj or _opt) and action)):
         with st.spinner("Recherche en cours…"):
             items, stats = find_candidates_ex(s_cat, subj, action, int(limit), s_kind, precision.strip(), free, sp)
         st.session_state["search"] = {"ctx": (s_cat, subj or "multi", store_action, s_kind), "items": items, "stats": dict(stats), "limit": int(limit), "sort": sort_label}
@@ -464,7 +479,7 @@ with tab_search:
         dup = bool(cand.get("duplicate")) or status in ("ok", "pending", "downloaded", "excluded_game")
         rej = bool(cand.get("rejected")) or status in ("rejected_inspect", "rejected_quality")
         blocked = busy() or dup or rej
-        with st.container(border=True):
+        with st.container(border=True, key=f"card_{i}"):
             img, body, act = st.columns([2, 6, 2], vertical_alignment="center")
             img.image(f"https://i.ytimg.com/vi/{vid}/mqdefault.jpg", width=170)
             body.markdown(f"**{cand['title']}**")
