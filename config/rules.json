@@ -323,7 +323,8 @@
         "cinematic_hits",
         "music_anime",
         "music_foot",
-        "music_both"
+        "music_both",
+        "sad_music"
       ],
       "forced_keywords": [
         "mp3 320kbps",
@@ -341,7 +342,8 @@
         "cinematic_hits": [],
         "music_anime": [],
         "music_foot": [],
-        "music_both": []
+        "music_both": [],
+        "sad_music": []
       },
       "min_kbps": 1000,
       "min_height": 0,
@@ -399,6 +401,11 @@
           "cinematic hits",
           "impact",
           "boom"
+        ],
+        "sad_music": [
+          "sad slowed reverb edit",
+          "sad anime piano",
+          "emotional sad edit song"
         ]
       },
       "subject_optional": [
@@ -412,7 +419,8 @@
         "cinematic_hits",
         "music_anime",
         "music_foot",
-        "music_both"
+        "music_both",
+        "sad_music"
       ],
       "subject_examples": {
         "trending_music": "vide = requête par défaut de l'action",
@@ -425,7 +433,8 @@
         "cinematic_hits": "vide = requête par défaut de l'action",
         "music_anime": "ex. phonk, lofi — vide = tous genres",
         "music_foot": "ex. phonk, lofi — vide = tous genres",
-        "music_both": "ex. phonk, lofi — vide = tous genres"
+        "music_both": "ex. phonk, lofi — vide = tous genres",
+        "sad_music": "ex. naruto, piano — vide = tristes généraux"
       },
       "action_query": {
         "music_anime": "anime edit song",
@@ -440,7 +449,8 @@
       "action_min_duration_sec": {
         "music_anime": 60,
         "music_foot": 60,
-        "music_both": 60
+        "music_both": 60,
+        "sad_music": 60
       },
       "cc_query": {
         "music_anime": "no copyright phonk",
@@ -452,7 +462,8 @@
         "phonk",
         "music_anime",
         "music_foot",
-        "music_both"
+        "music_both",
+        "sad_music"
       ],
       "min_views": {
         "week": 10000,

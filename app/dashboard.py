@@ -79,7 +79,7 @@ with _pg:
     st.caption("**Type raw** : scène brute, sources natives. **pack** : clips pour edits / scenepacks. **edit** : AMV et edits déjà montés. En pack et en edit, l'action est ignorée : seuls Sujet et Précision comptent.")
     st.caption("**Autorisation** : images/s (fps), débit (bitrate) ou hauteur sous le seuil de la catégorie demandent une confirmation avant téléchargement. Durée : anime 60-800 s (de 5 à 1200 s avec autorisation), foot jusqu'à 720 s, audio jusqu'à 600 s (musique : 60 s minimum) ; au-delà, écartée.")
     st.caption("**Audio seul** (catégorie audio, toutes actions) : télécharge uniquement la piste son en .m4a, sans image, bien plus léger qu'une vidéo. Les seuils vidéo (fps, hauteur, débit) sont ignorés, la durée reste contrôlée. Un titre déjà téléchargé en vidéo n'est pas retéléchargé (doublon) : supprime-le via le Nettoyage manuel ou choisis un autre titre.")
-    st.caption("**Période** (foot, anime) : filtre YouTube « cette semaine » / « ce mois », classement par pertinence ; pas de tri par date ni de tri ascendant (pour une vidéo ancienne, mets un millésime en Précision). **Tri** (trending_music, phonk, music_*) : Tendance semaine/mois = les plus vues sur la période, avec un minimum de vues pour écarter les titres confidentiels ; trending_music cherche des sons « slowed reverb edit » (ralentis avec écho) et phonk des sons « phonk edit », ceux utilisés dans les montages. Sans copyright (music_* seulement) = case Creative Commons de l'uploadeur, pas une garantie de licence. Destinations : music_anime, music_foot, music_both (croisement anime × foot) ; en Sans copyright, requêtes de remplacement (phonk / sport / générique) car la musique libre n'est pas spécifique à l'anime.")
+    st.caption("**Période** (foot, anime) : filtre YouTube « cette semaine » / « ce mois », classement par pertinence ; pas de tri par date ni de tri ascendant (pour une vidéo ancienne, mets un millésime en Précision). **Tri** (trending_music, phonk, sad_music, music_*) : Tendance semaine/mois = les plus vues sur la période, avec un minimum de vues pour écarter les titres confidentiels ; trending_music cherche des sons « slowed reverb edit » (ralentis avec écho) et phonk des sons « phonk edit », ceux utilisés dans les montages. Sans copyright (music_* seulement) = case Creative Commons de l'uploadeur, pas une garantie de licence. Destinations : music_anime, music_foot, music_both (croisement anime × foot) ; en Sans copyright, requêtes de remplacement (phonk / sport / générique) car la musique libre n'est pas spécifique à l'anime.")
 with _pg:
     st.caption("**Thème** : menu ⋮ en haut à droite → Système (auto), Clair ou Sombre.")
 _ACTION_HELP: dict[str, dict[str, str]] = {
@@ -107,6 +107,7 @@ _ACTION_HELP: dict[str, dict[str, str]] = {
         "transitions": "sons de transition", "meme_sounds": "sons de mèmes",
         "cinematic_hits": "impacts cinématiques", "music_anime": "musique pour anime (AMV)",
         "music_foot": "musique pour foot", "music_both": "musique pour anime et foot",
+        "sad_music": "musique triste (sons slowed reverb d'edits tristes)",
     },
 }
 with _pa:
