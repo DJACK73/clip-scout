@@ -200,8 +200,8 @@
         "strength_duels": "ex. haaland, lukaku — vide = tous joueurs",
         "best_moments": "ex. haaland, mbappe — vide = tous joueurs",
         "crazy_moments": "ex. un joueur ou vide = tous joueurs",
-        "big_matches": "ex. real madrid barcelona, milan inter, liverpool man united, boca river (obligatoire)",
-        "star_vs_stadium": "ex. ronaldo camp nou, messi bernabeu, haaland old trafford (obligatoire)"
+        "big_matches": "obligatoire : les deux equipes",
+        "star_vs_stadium": "obligatoire : le joueur et le stade ou le club adverse"
       },
       "empty_subject_term": "football"
     },

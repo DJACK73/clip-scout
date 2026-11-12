@@ -92,8 +92,8 @@ _ACTION_HELP: dict[str, dict[str, str]] = {
         "counter_attacks": "contre-attaques", "hattricks": "triplés", "one_vs_one": "duels un contre un",
         "strength_duels": "duels physiques, force des joueurs", "best_moments": "meilleurs moments",
         "crazy_moments": "moments fous et insolites",
-        "big_matches": "grandes rencontres et derbys entre deux clubs (sujet obligatoire : les deux equipes)",
-        "star_vs_stadium": "un grand joueur qui fait taire ou applaudir un stade adverse (sujet obligatoire)",
+        "big_matches": "grandes rencontres et derbys entre deux clubs (sujet obligatoire : equipe 1 + equipe 2)",
+        "star_vs_stadium": "un grand joueur qui fait taire ou applaudir un stade adverse (sujet obligatoire : joueur + stade ou club)",
     },
     "anime": {
         "fights_aura": "combats avec aura", "badass_walks": "marches et entrées classes",
