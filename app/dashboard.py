@@ -72,7 +72,7 @@ _pa = _a.popover("📖 Actions", key="pop_actions", width="stretch")
 _o.button("📂 Ouvrir le dossier", key="open_dir", on_click=_open_folder, width="stretch")
 with _pg:
     st.caption("**Étapes** : Chercher → Choisir → Télécharger. Un clip déjà téléchargé ou déjà rejeté n'est jamais retéléchargé (badge « doublon » / « rejeté »).")
-    st.caption("**Sujet** : titre d'anime, joueur ou genre. Peut rester vide pour les actions foot (sauf big_matches et star_vs_stadium) et audio, et pour anime (fights_aura, rage_screams, sad_backstory) : recherche sur tous les sujets, rangement dans le dossier `multi`.")
+    st.caption("**Sujet** : titre d'anime, joueur ou genre. Peut rester vide pour les actions foot (sauf big_matches et star_vs_stadium) et audio, et pour anime (fights_aura, rage_screams, sad_backstory, betrayals, sacrifices, sword_fights) : recherche sur tous les sujets, rangement dans le dossier `multi`.")
     st.caption("**Précision** : mot libre ajouté à la requête (ex. un millésime ou deux noms de personnages).")
     st.caption("**Action** : le type de scène cherché, envoyé tel quel à YouTube. `✏️ Autre…` = action libre.")
     st.caption("**Formats foot spéciaux** : angle_goals = buts marqués depuis un angle très fermé, près de la ligne de but (façon Yamal) · rabona_goals = rabonas (frappe pied d'appui croisé derrière la jambe) · backheel_goals = buts du talon · nutmegs = petits ponts (ballon passé entre les jambes) · solo_goals = buts après un long dribble en solitaire · gk_goals = buts marqués par des gardiens. Ce sont des requêtes YouTube en anglais, pas des filtres : la pertinence dépend des titres, vérifie avant de télécharger.")
@@ -102,6 +102,7 @@ _ACTION_HELP: dict[str, dict[str, str]] = {
         "transformations": "transformations", "villain_moments": "moments de méchants",
         "plot_twists": "retournements de situation", "training_arcs": "arcs d'entraînement",
         "emotional_reunions": "retrouvailles émouvantes", "romance_moments": "moments romantiques",
+        "betrayals": "trahisons", "sacrifices": "sacrifices et morts heroiques", "sword_fights": "combats a l'epee",
     },
     "audio": {
         "trending_music": "musiques tendance (sons slowed reverb utilisés en edits)", "voicelines": "répliques de personnages",

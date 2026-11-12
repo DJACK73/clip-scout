@@ -218,7 +218,10 @@
         "plot_twists",
         "training_arcs",
         "emotional_reunions",
-        "romance_moments"
+        "romance_moments",
+        "betrayals",
+        "sacrifices",
+        "sword_fights"
       ],
       "forced_keywords": [
         "scenepack"
@@ -300,24 +303,48 @@
           "romance",
           "romantic",
           "confession"
+        ],
+        "betrayals": [
+          "betrayal scene",
+          "betrayal",
+          "betrayed"
+        ],
+        "sacrifices": [
+          "sacrifice death scene",
+          "sacrifice",
+          "self sacrifice"
+        ],
+        "sword_fights": [
+          "sword fight scene",
+          "sword fight",
+          "sword fights"
         ]
       },
       "subject_optional": [
         "fights_aura",
         "rage_screams",
-        "sad_backstory"
+        "sad_backstory",
+        "betrayals",
+        "sacrifices",
+        "sword_fights"
       ],
       "subject_examples": {
         "fights_aura": "ex. solo leveling, jujutsu kaisen — vide = tous animes",
         "rage_screams": "ex. solo leveling, jujutsu kaisen — vide = tous animes",
-        "sad_backstory": "ex. solo leveling, jujutsu kaisen — vide = tous animes"
+        "sad_backstory": "ex. solo leveling, jujutsu kaisen — vide = tous animes",
+        "betrayals": "vide = tous animes",
+        "sacrifices": "vide = tous animes",
+        "sword_fights": "vide = tous animes"
       },
       "empty_subject_term": "anime",
       "action_forced_keywords": {
         "fights_aura": [],
         "rage_screams": [],
         "sad_backstory": [],
-        "funny_chill": []
+        "funny_chill": [],
+        "betrayals": [],
+        "sacrifices": [],
+        "sword_fights": []
       },
       "min_duration_sec": 60,
       "duration_hard_min_sec": 5,
