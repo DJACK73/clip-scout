@@ -72,7 +72,7 @@ _pa = _a.popover("📖 Actions", key="pop_actions", width="stretch")
 _o.button("📂 Ouvrir le dossier", key="open_dir", on_click=_open_folder, width="stretch")
 with _pg:
     st.caption("**Étapes** : Chercher → Choisir → Télécharger. Un clip déjà téléchargé ou déjà rejeté n'est jamais retéléchargé (badge « doublon » / « rejeté »).")
-    st.caption("**Sujet** : titre d'anime, joueur ou genre. Peut rester vide pour toutes les actions foot et audio, et pour anime (fights_aura, rage_screams, sad_backstory) : recherche sur tous les sujets, rangement dans le dossier `multi`.")
+    st.caption("**Sujet** : titre d'anime, joueur ou genre. Peut rester vide pour les actions foot (sauf big_matches et star_vs_stadium) et audio, et pour anime (fights_aura, rage_screams, sad_backstory) : recherche sur tous les sujets, rangement dans le dossier `multi`.")
     st.caption("**Précision** : mot libre ajouté à la requête (ex. un millésime ou deux noms de personnages).")
     st.caption("**Action** : le type de scène cherché, envoyé tel quel à YouTube. `✏️ Autre…` = action libre.")
     st.caption("**Formats foot spéciaux** : angle_goals = buts marqués depuis un angle très fermé, près de la ligne de but (façon Yamal) · rabona_goals = rabonas (frappe pied d'appui croisé derrière la jambe) · backheel_goals = buts du talon · nutmegs = petits ponts (ballon passé entre les jambes) · solo_goals = buts après un long dribble en solitaire · gk_goals = buts marqués par des gardiens. Ce sont des requêtes YouTube en anglais, pas des filtres : la pertinence dépend des titres, vérifie avant de télécharger.")
@@ -92,6 +92,8 @@ _ACTION_HELP: dict[str, dict[str, str]] = {
         "counter_attacks": "contre-attaques", "hattricks": "triplés", "one_vs_one": "duels un contre un",
         "strength_duels": "duels physiques, force des joueurs", "best_moments": "meilleurs moments",
         "crazy_moments": "moments fous et insolites",
+        "big_matches": "grandes rencontres et derbys entre deux clubs (sujet obligatoire : les deux equipes)",
+        "star_vs_stadium": "un grand joueur qui fait taire ou applaudir un stade adverse (sujet obligatoire)",
     },
     "anime": {
         "fights_aura": "combats avec aura", "badass_walks": "marches et entrées classes",

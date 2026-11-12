@@ -25,7 +25,9 @@
         "backheel_goals",
         "nutmegs",
         "solo_goals",
-        "gk_goals"
+        "gk_goals",
+        "big_matches",
+        "star_vs_stadium"
       ],
       "forced_keywords": [
         "60fps"
@@ -132,6 +134,14 @@
         "gk_goals": [
           "goalkeeper goal",
           "keeper scores"
+        ],
+        "big_matches": [
+          "best moments",
+          "highlights"
+        ],
+        "star_vs_stadium": [
+          "silences stadium",
+          "standing ovation rival fans"
         ]
       },
       "min_fps": 29,
@@ -189,7 +199,9 @@
       "subject_examples": {
         "strength_duels": "ex. haaland, lukaku — vide = tous joueurs",
         "best_moments": "ex. haaland, mbappe — vide = tous joueurs",
-        "crazy_moments": "ex. un joueur ou vide = tous joueurs"
+        "crazy_moments": "ex. un joueur ou vide = tous joueurs",
+        "big_matches": "ex. real madrid barcelona, milan inter, liverpool man united, boca river (obligatoire)",
+        "star_vs_stadium": "ex. ronaldo camp nou, messi bernabeu, haaland old trafford (obligatoire)"
       },
       "empty_subject_term": "football"
     },
