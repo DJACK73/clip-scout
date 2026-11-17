@@ -12,7 +12,7 @@ from app.paths import free_disk_gb
 from app.slug import slug
 
 CATEGORIES: list[str] = ["foot", "anime", "audio"]
-CAT_LABELS: dict[str, str] = {"foot": "⚽ foot", "anime": "🎌 anime", "audio": "🎵 audio"}
+CAT_LABELS: dict[str, str] = {"manual": "📁 manual", "foot": "⚽ foot", "anime": "🎌 anime", "audio": "🎵 audio"}
 KINDS: list[str] = ["raw", "pack", "edit"]
 BASE_COLUMNS: list[str] = ["video_id", "status", "reason", "title", "category", "kind", "subject", "action", "fps", "bitrate", "channel", "file_path", "created_at"]
 ACTIONS: dict[str, list[str]] = {k: v["actions"] for k, v in load_rules()["categories"].items()}
@@ -136,13 +136,26 @@ m5.metric("Disque libre", f"{free_disk_gb():.0f} Go", border=True)
 
 from app.guard import pot_up
 if not pot_up():
-    st.warning("Serveur PO token arrêté : docker start bgutil-pot")
+    import subprocess as _sp
+    try:
+        _dk = _sp.run(["docker", "info"], capture_output=True, timeout=8).returncode == 0
+    except (OSError, _sp.TimeoutExpired):
+        _dk = False
+    if not _dk:
+        st.error("Docker non démarré : lance Docker, puis recharge la page (F5)")
+    elif not st.session_state.get("pot_tried"):
+        st.session_state["pot_tried"] = True
+        with st.spinner("Démarrage du serveur PO…"):
+            _sp.run(["bash", str(Path(__file__).resolve().parents[1] / "scripts" / "ensure_pot.sh")], timeout=60)
+        st.rerun()
+    else:
+        st.warning("Serveur PO token arrêté : démarre le conteneur clip-scout-pot dans Docker")
 panel = st.container()
 tab_search, tab_url, tab_db = st.tabs(["🔍 Recherche", "🔗 URL directe", "🗄️ Base"])
 
 ROOT = Path(__file__).resolve().parents[1]
 LOGS = ROOT / "logs"
-MAX_PAR = 3
+MAX_PAR = 1
 
 def _alive(pid: int) -> bool:
     try:
@@ -171,6 +184,7 @@ def cancel() -> None:
     from app.cleanup import purge_partials
     from app.database import update_status
     job = st.session_state.get("job")
+    st.session_state["queue"] = []
     targets = running_jobs()
     for vid, pid in targets:
         try:
@@ -216,6 +230,13 @@ def render_job() -> None:
             _t.sleep(2)
         launch(*_q.pop(0))
         _n += 1
+    _b = st.session_state.get("u_batch", [])
+    if _b:
+        _sr = {r["video_id"]: r for r in status_reasons()}
+        for _x in _b:
+            _r = _sr.get(_x)
+            if _r and _r["status"] in ("ok", "failed", "rejected_inspect", "rejected_quality", "needs_confirm"):
+                st.caption(f"`{_x}` · {_r['status']}" + (f" · {_r['reason']}" if _r["reason"] else ""))
     job = st.session_state.get("job")
     for _v, _pid in running_jobs():
         if not job or _v != job["video_id"]:
@@ -330,7 +351,7 @@ def _fmt_views(v: int | None) -> str:
         return ""
     return f" · {v / 1e6:.1f} M vues" if v >= 1_000_000 else f" · {v / 1e3:.0f} k vues" if v >= 1000 else f" · {v} vues"
 
-_CAT_COLORS: dict[str, str] = {"foot": "#16a34a", "anime": "#e11d48", "audio": "#7c3aed"}
+_CAT_COLORS: dict[str, str] = {"manual": "#64748b", "foot": "#16a34a", "anime": "#e11d48", "audio": "#7c3aed"}
 _KIND_COLORS: dict[str, str] = {"raw": "#2563eb", "pack": "#d97706", "edit": "#db2777"}
 
 
@@ -365,23 +386,8 @@ def _pick(col, key: str, label: str, value: str, skey: str) -> None:
 with tab_url:
     urls = st.text_area("URL ou nom (1 par ligne, max 4)", key="u_urls", height=110)
     u_fmt = st.radio("Format", ["Vidéo", "m4a", "mp3"], horizontal=True, key="u_fmt")
-    st.caption("URL directe : exclusions de mots-clés ignorées, seuils fps/kbps/hauteur appliqués au type raw.")
-    st.session_state.setdefault("u_cat", "foot")
-    st.session_state.setdefault("u_kind", "raw")
-    _uc = st.columns([1, 1, 1, 0.3, 1, 1, 1, 2.7])
-    for _c, _k in zip(_uc[:3], CATEGORIES):
-        _pick(_c, f"ucat_{_k}", CAT_LABELS[_k], _k, "u_cat")
-    for _c, _k in zip(_uc[4:7], KINDS):
-        _pick(_c, f"uknd_{_k}", _k, _k, "u_kind")
-    cat = st.session_state["u_cat"]
-    kind = st.session_state["u_kind"]
-    st.markdown(
-        "<style>"
-        + "".join(_btn_css(f".st-key-ucat_{k}", _CAT_COLORS[k]) for k in CATEGORIES)
-        + "".join(_btn_css(f".st-key-uknd_{k}", _KIND_COLORS[k]) for k in KINDS)
-        + "</style>",
-        unsafe_allow_html=True,
-    )
+    st.caption("URL directe : aucun seuil ni exclusion ; fichiers rangés dans storage/manual/.")
+    cat, kind = "manual", "raw"
     if st.button("Télécharger", key="u_go", disabled=bool(st.session_state.get("queue")) or len(running_jobs()) >= MAX_PAR) and urls.strip():
         from app.search_ytdlp import first_hit
         _fmt = {"Vidéo": "", "m4a": "m4a", "mp3": "mp3"}[u_fmt]
@@ -404,8 +410,9 @@ with tab_url:
                 _items.append((_cand, cat, "manual", "manual", kind, False, _fmt))
         if _items:
             st.session_state["queue"] = _items
+            st.session_state["u_batch"] = [_i[0]["video_id"] for _i in _items]
             st.rerun()
-    if cat == "audio" or u_fmt != "Vidéo":
+    if u_fmt != "Vidéo":
         st.caption("⚠️ Musique : œuvres protégées par le droit d'auteur. Usage personnel uniquement, ne pas republier sans licence.")
 
 with tab_search:
@@ -522,14 +529,14 @@ with tab_db:
         st.caption("Supprime les vidéos téléchargées (statut ok) d'une catégorie ; la ligne reste en base avec le statut purged.")
         st.markdown(
             "<style>"
-            + "".join(_solid(f".st-key-purge_{k}", _CAT_COLORS[k]) for k in CATEGORIES)
+            + "".join(_solid(f".st-key-purge_{k}", _CAT_COLORS[k]) for k in [*CATEGORIES, "manual"])
             + _solid(".st-key-purge_yes", "#dc2626")
             + _solid(".st-key-purge_no", "#64748b")
             + "[class*='st-key-purge_'] button:disabled{opacity:.35}"
             + "</style>",
             unsafe_allow_html=True,
         )
-        for col, pcat in zip(st.columns(3), CATEGORIES):
+        for col, pcat in zip(st.columns(4), [*CATEGORIES, "manual"]):
             pfiles = _category_files(pcat)
             pmb = sum(p.stat().st_size for _, p in pfiles) // 1_000_000
             col.metric(CAT_LABELS[pcat], f"{len(pfiles)} fichiers")
@@ -551,5 +558,5 @@ with tab_db:
                 st.rerun()
 
 with panel:
-    st.fragment(render_job, run_every=5 if busy() else None)()
+    st.fragment(render_job, run_every=3 if (busy() or st.session_state.get("queue")) else None)()
 step_slot.markdown(_stepper(2 if busy() else 1 if state["items"] else 0))

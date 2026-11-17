@@ -81,11 +81,15 @@ def process(candidate: dict[str, Any], category: str, subject: str, action: str,
     register_task(vid, category, subject, action, candidate["url"], kind)
     set_meta(vid, candidate.get("title"), candidate.get("channel"))
     try:
-        fps_t, kbps_t = _thresholds(category, kind, action)
-        confirm = _confirm_fps(category, kind)
-        if audio_only:
+        if category == "manual":
             fps_t, kbps_t, confirm = 0, 0, None
-        meta = inspect(candidate["url"], fps_t, kbps_t, min_height=0 if audio_only else _min_height(category, kind), min_duration=_min_duration(category, action), max_duration=_max_duration(category, kind), soft=_soft(category, kind), dur_hard=_dur_hard(category, kind))
+            meta = inspect(candidate["url"], 0, 0, min_height=0, min_duration=1, max_duration=None, soft=set(), dur_hard=None)
+        else:
+            fps_t, kbps_t = _thresholds(category, kind, action)
+            confirm = _confirm_fps(category, kind)
+            if audio_only:
+                fps_t, kbps_t, confirm = 0, 0, None
+            meta = inspect(candidate["url"], fps_t, kbps_t, min_height=0 if audio_only else _min_height(category, kind), min_duration=_min_duration(category, action), max_duration=_max_duration(category, kind), soft=_soft(category, kind), dur_hard=_dur_hard(category, kind))
     except QualityRejected as e:
         set_meta(vid, e.title or candidate.get("title"), e.channel or candidate.get("channel"))
         update_status(vid, "rejected_inspect", reason=str(e)[:300])

@@ -35,7 +35,10 @@ def download(meta: dict[str, Any], category: str, kind: str = "raw", subject: st
     parts = [slug(subject), slug(action)]
     if parts == ["manual", "manual"]:
         parts = ["manual"]
-    out_dir = settings.base_storage_path.joinpath(category, kind, *parts)
+    if category == "manual":
+        out_dir = settings.base_storage_path.joinpath("manual")
+    else:
+        out_dir = settings.base_storage_path.joinpath(category, kind, *parts)
     name = slug(meta.get("title") or meta["video_id"])
     out_dir.mkdir(parents=True, exist_ok=True)
     last: Exception = DownloadFailed("aucun sélecteur")
